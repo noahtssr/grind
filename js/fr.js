@@ -1,5 +1,6 @@
 /* Grind · interface en français (le contenu des cours n'est pas traduit ici) */
 window.GRIND_FR={
+". Until then, you can already explore the subjects, flashcards and MCQs.":". D'ici là, tu peux déjà explorer les matières, les flashcards et les QCM.",
 "Accounts":"Comptes","Student":"Élève","Signed up":"Inscription","Last login":"Dernière connexion","Last activity":"Dernière activité","XP 7 days":"XP 7 jours","Sessions":"Séances","Streak":"Série","📋 Copy the emails":"📋 Copier les e-mails","email not confirmed":"e-mail non confirmé","✓ Emails copied":"✓ E-mails copiés","Couldn't copy.":"Copie impossible.","Couldn't load the accounts.":"Impossible de charger les comptes.","Passwords are encrypted: nobody can see them, not even you. Mid-term grades and calendars stay private.":"Les mots de passe sont chiffrés : personne ne peut les voir, même pas toi. Les notes de mid-term et les calendriers restent privés.",
 "⏱ It can take up to 10 minutes to arrive.":"⏱ Il peut mettre jusqu'à 10 minutes à arriver.",
 "📝 No summary for this session:":"📝 Pas de résumé pour cette séance :","Key points of this session's chapter, from your course notes.":"Points clés du chapitre de cette séance, tirés de tes fiches de cours.",
