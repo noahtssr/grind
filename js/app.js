@@ -789,17 +789,34 @@ document.addEventListener('click',e=>{const a=e.target.closest&&e.target.closest
 
 
 /* ================= ADMIN (creator only) ================= */
-let ADMIN=false,admTab='open';
+let ADMIN=false,admTab='users';
 async function checkAdmin(){try{const {data}=await SB.rpc('is_grind_admin');if(data===true&&!ADMIN){ADMIN=true;NAV.push(['admin','🛠','Admin']);render();}}catch(e){}}
+function tmpPass(){const a='abcdefghjkmnpqrstuvwxyz23456789';let s='';const r=crypto.getRandomValues(new Uint32Array(10));r.forEach(x=>s+=a[x%a.length]);return s.slice(0,5)+'-'+s.slice(5);}
 async function viewAdmin(){
   if(!ADMIN){go('home');return;}
-  app.innerHTML=`<div class="top"><h1>🛠 Admin</h1><span class="sp"></span><button class="btn sm" id="admr">Refresh</button></div><div id="admk" class="g g4 mb"></div><div class="card"><div class="libtabs" style="margin-bottom:8px"><button class="chipb ${admTab==='open'?'on':''}" data-at="open">To fix</button><button class="chipb ${admTab==='done'?'on':''}" data-at="done">Fixed</button></div><div id="adml"><p class="mut">Loading…</p></div></div>`;
+  app.innerHTML=`<div class="top"><h1>🛠 Admin</h1><span class="sp"></span><button class="btn sm" id="admr">Refresh</button></div><div id="admk" class="g g4 mb"></div><div class="card"><div class="libtabs" style="margin-bottom:8px"><button class="chipb ${admTab==='users'?'on':''}" data-at="users">Accounts</button><button class="chipb ${admTab==='open'?'on':''}" data-at="open">To fix</button><button class="chipb ${admTab==='done'?'on':''}" data-at="done">Fixed</button></div><div id="adml"><p class="mut">Loading…</p></div></div>`;
   document.getElementById('admr').onclick=()=>viewAdmin();
   app.querySelectorAll('[data-at]').forEach(b=>b.onclick=()=>{admTab=b.dataset.at;viewAdmin();});
-  const [st,rp]=await Promise.all([SB.rpc('grind_stats'),SB.from('reports').select('id,subj,kind,ref,item,comment,status,created_at').eq('status',admTab).order('created_at',{ascending:false}).limit(200)]);
-  const k=document.getElementById('admk');if(!k)return;const s=st.data||{};
-  k.innerHTML=[['👥',s.users,'accounts'],['✅',s.confirmed,'confirmed emails'],['🔥',s.active7,'active this week'],['⚑',s.open_reports,'reports to fix']].map(x=>`<div class="kpi"><div class="v">${x[0]} ${x[1]??'—'}</div><div class="l">${x[2]}</div></div>`).join('');
-  const L=document.getElementById('adml'),rows=rp.data||[];
+  const [st,us]=await Promise.all([SB.rpc('grind_stats'),SB.rpc('grind_users')]);
+  const k=document.getElementById('admk');if(!k)return;const s=st.data||{},users=us.data||[],pend=users.filter(u=>!u.approved&&!u.admin);
+  k.innerHTML=[['👥',users.length,'accounts'],['⏳',pend.length,'waiting for approval'],['🔥',s.active7,'active this week'],['⚑',s.open_reports,'reports to fix']].map(x=>`<div class="kpi"><div class="v">${x[0]} ${x[1]??'—'}</div><div class="l">${x[2]}</div></div>`).join('');
+  const L=document.getElementById('adml');
+  if(admTab==='users'){
+    const dt=d=>new Date(d).toLocaleString(UI_LANG()==='fr'?'fr-FR':'en-GB',{dateStyle:'short',timeStyle:'short'});
+    const row=(u,act)=>`<div class="grow" style="align-items:center;flex-wrap:wrap"><div style="flex:1;min-width:180px"><div><b class="adm-n" data-notr></b>${u.admin?' <span class="pill">admin</span>':''}</div><div class="small mut"><span class="adm-e" data-notr></span> · ${dt(u.created_at)}</div></div>${act}</div>`;
+    const ok=users.filter(u=>u.approved||u.admin);
+    L.innerHTML=`<h3 style="margin:4px 0 6px">⏳ Waiting for approval (${pend.length})</h3><p class="small mut" style="margin-top:0">Approve only people you know are in your S3 promo: email addresses are not verified.</p>`+
+      (pend.length?pend.map(u=>row(u,`<div style="display:flex;gap:6px"><button class="btn sm" data-rej="${u.id}">✕ Refuse</button><button class="btn sm pri" data-ok="${u.id}">✓ Approve</button></div>`)).join(''):'<p class="mut">Nobody is waiting.</p>')+
+      `<h3 style="margin:18px 0 6px">✅ Approved (${ok.length})</h3><p class="small mut" style="margin-top:0">A student forgot their password? Give them a temporary one, they can change it in My profile.</p>`+
+      ok.map(u=>row(u,u.admin?'':`<button class="btn sm" data-pw="${u.id}">🔑 Temporary password</button>`)).join('');
+    const list=[...pend,...ok];L.querySelectorAll('.adm-n').forEach((el,i)=>el.textContent=((list[i].first||'')+' '+(list[i].last||'')).trim()||'—');L.querySelectorAll('.adm-e').forEach((el,i)=>el.textContent=list[i].email);
+    L.querySelectorAll('[data-ok]').forEach(b=>b.onclick=async()=>{b.disabled=true;const {error}=await SB.rpc('grind_approve',{uid:b.dataset.ok});if(error){toast(t('Error: ')+error.message);b.disabled=false;return;}toast(t('✓ Account approved'));viewAdmin();});
+    L.querySelectorAll('[data-rej]').forEach(b=>b.onclick=async()=>{const u=users.find(x=>x.id===b.dataset.rej);if(!confirm(t('Refuse and delete this account?')+'\n'+u.email))return;b.disabled=true;const {error}=await SB.rpc('grind_reject',{uid:u.id});if(error){toast(t('Error: ')+error.message);b.disabled=false;return;}toast(t('Account deleted'));viewAdmin();});
+    L.querySelectorAll('[data-pw]').forEach(b=>b.onclick=async()=>{const u=users.find(x=>x.id===b.dataset.pw);if(!confirm(t('Create a temporary password for this student? Their current password will stop working.')+'\n'+u.email))return;const pw=tmpPass();b.disabled=true;const {error}=await SB.rpc('grind_set_password',{uid:u.id,pw});b.disabled=false;if(error){toast(t('Error: ')+error.message);return;}
+      const box=document.createElement('div');box.className='tipnote';box.style.marginTop='6px';box.innerHTML=`${t('Temporary password for')} <b data-notr></b> : <code data-notr style="font-size:1.1em;user-select:all"></code><div class="small mut">${t('Send it to them privately. They log in with it, then change it in My profile.')}</div>`;box.querySelector('b').textContent=u.email;box.querySelector('code').textContent=pw;b.closest('.grow').after(box);});
+    return;}
+  const rp=await SB.from('reports').select('id,subj,kind,ref,item,comment,status,created_at').eq('status',admTab).order('created_at',{ascending:false}).limit(200);
+  const rows=rp.data||[];
   const K={wrong:'Wrong answer',typo:'Typo',unclear:'Unclear',other:'Other',privacy:'Data request'};
   L.innerHTML=rows.length?rows.map(r=>`<div class="grow" style="align-items:flex-start"><div style="flex:1;min-width:0"><div class="small"><span class="pill ${r.kind==='privacy'?'bad':''}">${K[r.kind]||r.kind}</span> ${r.subj?`<b>${r.subj}</b>`:''} <span class="mut">${new Date(r.created_at).toLocaleString(UI_LANG()==='fr'?'fr-FR':'en-GB',{dateStyle:'short',timeStyle:'short'})} · ${r.ref||''}</span></div><div class="adm-i small" data-notr style="margin-top:4px"></div><div class="adm-c" data-notr style="margin-top:4px"></div></div>${r.status==='open'?`<button class="btn sm" data-done="${r.id}">✓ Fixed</button>`:`<button class="btn sm" data-reopen="${r.id}">Reopen</button>`}</div>`).join(''):'<p class="mut">Nothing here.</p>';
   L.querySelectorAll('.adm-i').forEach((el,i)=>el.textContent=rows[i].item||'');L.querySelectorAll('.adm-c').forEach((el,i)=>{el.textContent=rows[i].comment?'💬 '+rows[i].comment:'';});
