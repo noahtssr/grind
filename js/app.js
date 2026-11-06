@@ -789,16 +789,31 @@ document.addEventListener('click',e=>{const a=e.target.closest&&e.target.closest
 
 
 /* ================= ADMIN (creator only) ================= */
-let ADMIN=false,admTab='open';
+let ADMIN=false,admTab='users',admSort='created_at';
 async function checkAdmin(){try{const {data}=await SB.rpc('is_grind_admin');if(data===true&&!ADMIN){ADMIN=true;NAV.push(['admin','🛠','Admin']);render();}}catch(e){}}
+function admKpi(s){const k=document.getElementById('admk');if(!k)return;k.innerHTML=[['👥',s.users,'accounts'],['✅',s.confirmed,'confirmed emails'],['🔥',s.active7,'active this week'],['⚑',s.open_reports,'reports to fix']].map(x=>`<div class="kpi"><div class="v">${x[0]} ${x[1]??'—'}</div><div class="l">${x[2]}</div></div>`).join('');}
+async function admUsers(){
+  const L=document.getElementById('adml');if(!L)return;const {data,error}=await SB.rpc('grind_accounts');
+  if(error){L.innerHTML='<p class="mut">Couldn\'t load the accounts.</p>';console.error(error);return;}
+  const rows=(data||[]).slice(),num=['xp','xp7','sessions','streak','lvl'];
+  rows.sort((a,b)=>{const x=a[admSort],y=b[admSort];if(num.includes(admSort))return (+y||0)-(+x||0);return String(y||'').localeCompare(String(x||''));});
+  const loc=UI_LANG()==='fr'?'fr-FR':'en-GB',dt=d=>d?new Date(d).toLocaleString(loc,{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'}):'—';
+  const H=[['name','Student'],['created_at','Signed up'],['last_sign_in','Last login'],['active_at','Last activity'],['xp','XP'],['xp7','XP 7 days'],['sessions','Sessions'],['streak','Streak']];
+  L.innerHTML=`<div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:8px"><span class="small mut">${rows.length} ${t('accounts')} · ${rows.filter(r=>r.confirmed).length} ${t('confirmed emails')}</span><span class="sp" style="flex:1"></span><button class="btn sm" id="admcp">📋 Copy the emails</button></div>
+  <div style="overflow-x:auto"><table class="admt"><thead><tr>${H.map(h=>`<th>${h[0]==='name'?h[1]:`<a href="#" data-srt="${h[0]}">${h[1]}${admSort===h[0]?' ▾':''}</a>`}</th>`).join('')}</tr></thead><tbody>${rows.map(r=>`<tr><td><div class="adm-n" data-notr style="font-weight:600"></div><div class="small mut adm-e" data-notr></div>${r.confirmed?'':`<span class="pill">${t('email not confirmed')}</span>`}</td><td>${dt(r.created_at)}</td><td>${dt(r.last_sign_in)}</td><td>${dt(r.active_at)}</td><td>${Math.round(+r.xp||0)}</td><td>${Math.round(+r.xp7||0)}</td><td>${r.sessions||0}</td><td>${r.streak!=null?r.streak+' 🔥':'—'}</td></tr>`).join('')}</tbody></table></div>
+  <p class="small mut" style="margin-top:10px">Passwords are encrypted: nobody can see them, not even you. Mid-term grades and calendars stay private.</p>`;
+  L.querySelectorAll('.adm-n').forEach((el,i)=>el.textContent=((rows[i].first||'')+' '+(rows[i].last||'')).trim()||'—');L.querySelectorAll('.adm-e').forEach((el,i)=>el.textContent=rows[i].email);
+  L.querySelectorAll('[data-srt]').forEach(a=>a.onclick=e=>{e.preventDefault();admSort=a.dataset.srt;admUsers();});
+  document.getElementById('admcp').onclick=async()=>{try{await navigator.clipboard.writeText(rows.map(r=>r.email).join('; '));toast(t('✓ Emails copied'));}catch(e){toast(t('Couldn\'t copy.'));}};
+}
 async function viewAdmin(){
   if(!ADMIN){go('home');return;}
-  app.innerHTML=`<div class="top"><h1>🛠 Admin</h1><span class="sp"></span><button class="btn sm" id="admr">Refresh</button></div><div id="admk" class="g g4 mb"></div><div class="card"><div class="libtabs" style="margin-bottom:8px"><button class="chipb ${admTab==='open'?'on':''}" data-at="open">To fix</button><button class="chipb ${admTab==='done'?'on':''}" data-at="done">Fixed</button></div><div id="adml"><p class="mut">Loading…</p></div></div>`;
+  app.innerHTML=`<div class="top"><h1>🛠 Admin</h1><span class="sp"></span><button class="btn sm" id="admr">Refresh</button></div><div id="admk" class="g g4 mb"></div><div class="card"><div class="libtabs" style="margin-bottom:8px"><button class="chipb ${admTab==='users'?'on':''}" data-at="users">Accounts</button><button class="chipb ${admTab==='open'?'on':''}" data-at="open">To fix</button><button class="chipb ${admTab==='done'?'on':''}" data-at="done">Fixed</button></div><div id="adml"><p class="mut">Loading…</p></div></div>`;
   document.getElementById('admr').onclick=()=>viewAdmin();
   app.querySelectorAll('[data-at]').forEach(b=>b.onclick=()=>{admTab=b.dataset.at;viewAdmin();});
+  if(admTab==='users'){const st=await SB.rpc('grind_stats');admKpi(st.data||{});return admUsers();}
   const [st,rp]=await Promise.all([SB.rpc('grind_stats'),SB.from('reports').select('id,subj,kind,ref,item,comment,status,created_at').eq('status',admTab).order('created_at',{ascending:false}).limit(200)]);
-  const k=document.getElementById('admk');if(!k)return;const s=st.data||{};
-  k.innerHTML=[['👥',s.users,'accounts'],['✅',s.confirmed,'confirmed emails'],['🔥',s.active7,'active this week'],['⚑',s.open_reports,'reports to fix']].map(x=>`<div class="kpi"><div class="v">${x[0]} ${x[1]??'—'}</div><div class="l">${x[2]}</div></div>`).join('');
+  admKpi(st.data||{});
   const L=document.getElementById('adml'),rows=rp.data||[];
   const K={wrong:'Wrong answer',typo:'Typo',unclear:'Unclear',other:'Other',privacy:'Data request'};
   L.innerHTML=rows.length?rows.map(r=>`<div class="grow" style="align-items:flex-start"><div style="flex:1;min-width:0"><div class="small"><span class="pill ${r.kind==='privacy'?'bad':''}">${K[r.kind]||r.kind}</span> ${r.subj?`<b>${r.subj}</b>`:''} <span class="mut">${new Date(r.created_at).toLocaleString(UI_LANG()==='fr'?'fr-FR':'en-GB',{dateStyle:'short',timeStyle:'short'})} · ${r.ref||''}</span></div><div class="adm-i small" data-notr style="margin-top:4px"></div><div class="adm-c" data-notr style="margin-top:4px"></div></div>${r.status==='open'?`<button class="btn sm" data-done="${r.id}">✓ Fixed</button>`:`<button class="btn sm" data-reopen="${r.id}">Reopen</button>`}</div>`).join(''):'<p class="mut">Nothing here.</p>';
