@@ -31,9 +31,9 @@ function enter(ids,btn){ids.forEach(i=>{const el=document.getElementById(i);if(e
 function draw(){
   if(mode==='login'){shell(`<h1>Log in</h1><p class="mut" style="margin-top:-2px">Your revision space for the IÉSEG Bachelor S3 finals.</p>
     ${field('ae','School email','email','username','firstname.lastname@ieseg.fr',emailKeep)}${field('ap','Password','password','current-password','')}
-    <div id="aerr" class="oerr">${msg==='NOTCONFIRMED'?'':esc(msg)}</div>${msg==='NOTCONFIRMED'?`<div class="note small">Confirm your email first: open the link we sent you. <a href="#" id="resend">Send the link again</a></div>`:''}
+    <div id="aerr" class="oerr">${msg==='NOTCONFIRMED'?'':esc(msg)}</div>${msg==='NOTCONFIRMED'?`<div class="tipnote small">Confirm your email first: open the link we sent you. <a href="#" id="resend">Send the link again</a></div>`:''}
     <div class="onbfoot" style="align-items:center"><a href="#" data-mode="forgot" class="small">Forgot your password?</a><button class="btn pri big" id="ago">Log in</button></div>
-    <div class="authalt"><span class="mut">New on Grind?</span> <a href="#" data-mode="signup">Create an account</a></div>`);
+    <div class="authalt"><span class="mut">New on Grind?</span> <a href="#" data-mode="signup">Create an account</a></div><div class="authfoot"><a href="#" data-privacy>Privacy</a> · <span>A student project, not an official IÉSEG service.</span></div>`);
     const b=document.getElementById('ago');enter(['ae','ap'],b);
     const rs=document.getElementById('resend');if(rs)rs.onclick=async e=>{e.preventDefault();const {error}=await sb.auth.resend({type:'signup',email:emailKeep,options:{emailRedirectTo:SITE}});msg='';draw();document.getElementById('aerr').textContent=error?errText(error):t('Link sent: check your inbox (and spam).');};
     b.onclick=async()=>{const e=document.getElementById('ae').value.trim().toLowerCase(),p=document.getElementById('ap').value,er=document.getElementById('aerr');emailKeep=e;
@@ -43,7 +43,7 @@ function draw(){
   else if(mode==='signup'){shell(`<h1>Create your account</h1><p class="mut" style="margin-top:-2px">Reserved for IÉSEG students: use your <b>@ieseg.fr</b> address.</p>
     <div class="g g2" style="gap:0 12px">${field('sf','First name','text','given-name','')}${field('sl','Last name','text','family-name','')}</div>
     ${field('se','School email','email','email','firstname.lastname@ieseg.fr',emailKeep)}${field('sp','Password','password','new-password','At least 8 characters')}${field('sp2','Confirm password','password','new-password','')}
-    <p class="small mut" style="margin:10px 0 0">On the leaderboard, only your first name and initial are shown (e.g. Noah.T).</p>
+    <p class="small mut" style="margin:10px 0 0">On the leaderboard, only your first name and initial are shown (e.g. Noah.T). By creating an account you accept the <a href="#" data-privacy>privacy notice</a>.</p>
     <div id="aerr" class="oerr">${esc(msg)}</div>
     <div class="onbfoot" style="align-items:center"><a href="#" data-mode="login" class="small">← I already have an account</a><button class="btn pri big" id="sgo">Create my account</button></div>`);
     const b=document.getElementById('sgo');enter(['sf','sl','se','sp','sp2'],b);
@@ -57,8 +57,9 @@ function draw(){
       if(data.session){boot(data.session);return;}
       if(data.user&&Array.isArray(data.user.identities)&&!data.user.identities.length){msg=errText('already registered');draw();return;}
       mode='checkmail';msg='';draw();};}
-  else if(mode==='checkmail'){shell(`<h1>Check your inbox 📬</h1><p>We sent a confirmation link to <b>${esc(emailKeep)}</b>. Open it to activate your account, then log in.</p><div class="note small">📥 <b>Not in your inbox?</b> Look in <b>Junk Email / Spam</b>: the first email from Grind often lands there.</div><div id="aerr" class="oerr"></div>
-    <div class="onbfoot" style="align-items:center"><a href="#" id="resend" class="small">Send the link again</a><button class="btn pri big" data-mode="login">Back to log in</button></div>`);
+  else if(mode==='checkmail'){shell(`<h1>Check your inbox 📬</h1><p>We sent a confirmation link to <b>${esc(emailKeep)}</b>. Open it to activate your account, then log in.</p><div class="tipnote small">📥 <b>Not in your inbox?</b> Look in <b>Junk Email / Spam</b>: the first email from Grind often lands there.</div><div id="aerr" class="oerr"></div>
+    <div class="onbfoot" style="align-items:center"><a href="#" id="resend" class="small">Send the link again</a><button class="btn pri big" data-mode="login">Back to log in</button></div>${window.GRIND_DEMO?`<div class="demobox"><div class="small"><b>Aperçu :</b> in the real site, the student receives an email here. Click to simulate opening it.</div><button class="btn pri" id="demoopen">📧 Open the confirmation email</button></div>`:''}`);
+    {const d=document.getElementById('demoopen');if(d)d.onclick=()=>{const s=window.GRIND_DEMO.confirm(emailKeep);if(s){history.replaceState(null,'',location.pathname);boot(s);setTimeout(()=>window.toast&&toast(t('✓ Email confirmed: welcome to Grind!')),1500);}};}
     document.getElementById('resend').onclick=async e=>{e.preventDefault();const {error}=await sb.auth.resend({type:'signup',email:emailKeep,options:{emailRedirectTo:SITE}});document.getElementById('aerr').textContent=error?t(errText(error)):t('Link sent: check your inbox (and spam).');};}
   else if(mode==='forgot'){shell(`<h1>Forgot your password?</h1><p class="mut" style="margin-top:-2px">Enter your school email: we'll send you a link to choose a new password.</p>
     ${field('fe','School email','email','username','firstname.lastname@ieseg.fr',emailKeep)}<div id="aerr" class="oerr">${esc(msg)}</div>
@@ -68,7 +69,8 @@ function draw(){
       if(!/^[^@\s]+@[^@\s]+\.[a-z]{2,}$/i.test(e)){er.textContent=t('Enter a valid email address.');return;}
       busy(b,true,t('Sending…'));const {error}=await sb.auth.resetPasswordForEmail(e,{redirectTo:SITE});busy(b,false);
       if(error){msg=errText(error);draw();return;}mode='forgotsent';draw();};}
-  else if(mode==='forgotsent'){shell(`<h1>Check your inbox 📬</h1><p>If an account exists for <b>${esc(emailKeep)}</b>, you'll receive a link to choose a new password.</p><p class="small mut">The link is valid for 1 hour. Look in your spam folder if needed.</p><div class="onbfoot"><button class="btn pri big" data-mode="login">Back to log in</button></div>`);}
+  else if(mode==='forgotsent'){shell(`<h1>Check your inbox 📬</h1><p>If an account exists for <b>${esc(emailKeep)}</b>, you'll receive a link to choose a new password.</p><p class="small mut">The link is valid for 1 hour. Look in your spam folder if needed.</p><div class="onbfoot"><button class="btn pri big" data-mode="login">Back to log in</button></div>${window.GRIND_DEMO?`<div class="demobox"><div class="small"><b>Aperçu :</b> in the real site, the student receives a link by email. Click to simulate opening it.</div><button class="btn pri" id="demoreset">📧 Open the reset email</button></div>`:''}`);
+    {const d=document.getElementById('demoreset');if(d)d.onclick=()=>{if(window.GRIND_DEMO.recover(emailKeep)){mode='recovery';msg='';draw();}else{mode='login';msg=t('No account with this email in the preview: create one first.');draw();}};}}
   else if(mode==='recovery'){shell(`<h1>Choose a new password</h1>${field('rp','New password','password','new-password','At least 8 characters')}${field('rp2','Confirm password','password','new-password','')}<div id="aerr" class="oerr">${esc(msg)}</div><div class="onbfoot"><button class="btn pri big" id="rgo">Save and continue</button></div>`);
     const b=document.getElementById('rgo');enter(['rp','rp2'],b);
     b.onclick=async()=>{const p=document.getElementById('rp').value,p2=document.getElementById('rp2').value,er=document.getElementById('aerr');
@@ -101,11 +103,17 @@ async function boot(session){
   }catch(e){booted=false;mode='loading';msg='';A.innerHTML=`<div class="onb authbg"><div class="onbbox"><h1>${esc(t('Couldn\'t load Grind'))}</h1><p class="mut">${esc(t('Check your connection, then reload the page.'))}</p><div class="onbfoot"><button class="btn" id="lo">${esc(t('Log out'))}</button><button class="btn pri big" onclick="location.reload()">${esc(t('Reload'))}</button></div></div></div>`;document.getElementById('lo').onclick=async()=>{await sb.auth.signOut();location.reload();};console.error(e);}
 }
 window.GRIND_BOOT=boot;
+function openPrivacy(){let ov=document.getElementById('privov');if(ov)ov.remove();ov=document.createElement('div');ov.id='privov';ov.className='privov';
+  ov.innerHTML=`<div class="privbox"><button class="xbtn privx" aria-label="Close">✕</button><iframe src="privacy.html?embed=1" title="Privacy"></iframe></div>`;
+  document.body.appendChild(ov);const close=()=>ov.remove();ov.querySelector('.privx').onclick=close;ov.onclick=e=>{if(e.target===ov)close();};
+  document.addEventListener('keydown',function k(e){if(e.key==='Escape'){close();document.removeEventListener('keydown',k);}});}
+window.openPrivacy=openPrivacy;
+document.addEventListener('click',e=>{const a=e.target.closest&&e.target.closest('[data-privacy]');if(!a)return;e.preventDefault();openPrivacy();});
 i18nInit();
 sb.auth.onAuthStateChange((ev,session)=>{if(ev==='PASSWORD_RECOVERY'){mode='recovery';msg='';draw();}});
 (async()=>{mode='loading';msg='Loading…';draw();
   const {data}=await sb.auth.getSession();
   if(recovering){if(mode!=='recovery'){mode='recovery';draw();}return;}
   if(data&&data.session){boot(data.session);return;}
-  mode='login';msg=linkError?decodeURIComponent(linkError.replace(/\+/g,' ')):'';if(/expired|invalid/i.test(msg))msg=t('This link has expired. Ask for a new one.');draw();})();
+  mode='login';if(/deleted/.test(location.hash)){msg=t('Your account and all your data have been deleted.');history.replaceState(null,'',location.pathname);draw();return;}msg=linkError?decodeURIComponent(linkError.replace(/\+/g,' ')):'';if(/expired|invalid/i.test(msg))msg=t('This link has expired. Ask for a new one.');draw();})();
 })();

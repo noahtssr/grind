@@ -6,7 +6,6 @@ const EXAMS=[
  {id:'DI', name:'Digital Innovation', date:'2026-12-03', time:'10:45–12:15', need:14},
  {id:'AFA',name:'Advanced Financial Accounting', date:'2026-12-03', time:'14:00–15:30', need:20},
  {id:'MS', name:'Market Structures & Prices', date:'2026-12-08', time:'16:45–17:45', need:17},
- {id:'LV', name:'Espagnol · ENDT LV1 S3', date:'2026-12-09', time:'10:15–12:30', need:6},
  {id:'ECO',name:'Econometrics & Data Analysis', date:'2026-12-11', time:'14:00–15:30', need:18},
  {id:'ST', name:'Sales Techniques', date:'2026-12-11', time:'16:15–17:45', need:9},
  {id:'MM', name:'Marketing Management', date:'2026-12-15', time:'14:00–15:30', need:12},
@@ -47,12 +46,6 @@ MS:[
  {t:'Ch.3 · Profit max. (constant MC) & price discrimination',res:[['Slides PDF',R(321352)],['Insights',R(321474)],['Exercises',R(321839)],['Pizza challenge',R(321650)],['Additional',R(321846)],['Constant & increasing MC',R(321373)],['Sand economics',R(321596)],['QCM Basic',Q(321326)],['QCM Intermediate',Q(321327)]]},
  {t:'Ch.4 · Profit max. & market equilibrium',res:[['Slides PDF',R(321360)],['Insights',R(321480)],['Roadmap',R(322490)],['QCM Basic',Q(321877)],['QCM Intermediate',Q(321878)]]},
  {t:'Mock exam',res:[['Mock exam',R(321540)],['Structure',R(321626)]]},
-],
-LV:[
- {t:'Tema 7 · De compras',res:[['Programa',R(324011)],['Cuadernillo (Unidades)',R(245873)]]},
- {t:'Tema 8 · Otras épocas (imperfecto)',res:[['Cuadernillo (Unidades)',R(245873)]]},
- {t:'Repaso · Productos de ayer y hoy (indefinido)',res:[['Cuadernillo (Unidades)',R(245873)]]},
- {t:'Révision globale',res:[['Programa',R(324011)],['Cuadernillo (Unidades)',R(245873)]]},
 ],
 ECO:[
  {t:'Ch.1 · Données & SPSS',res:[['Tutoriels SPSS',P(177536)]]},
@@ -198,7 +191,6 @@ const GRADING={
  DI:[{n:'Poster presentation',w:25},{n:'Mid-term exam',w:30,mid:1},{n:'Final exam',w:45,fin:1}],
  AFA:[{n:'Mid-term exam',w:30,mid:1,uc:1},{n:'Capstone / participation',w:20,uc:1},{n:'Final exam',w:50,fin:1,uc:1}],
  MS:[{n:'Mid-term exam',w:30,mid:1,uc:1},{n:'Participation / online MCQs',w:20,uc:1},{n:'Final exam',w:50,fin:1,uc:1}],
- LV:[{n:'CC1 (oral + writing)',w:25},{n:'CC2 (oral + listening)',w:25},{n:'Digital project',w:15},{n:'Final exam',w:35,fin:1}],
  ECO:[{n:'Mid-term exam',w:30,mid:1,uc:1},{n:'Capstone project / homework',w:20,uc:1},{n:'Final exam',w:50,fin:1,uc:1}],
  ST:[{n:'Presence',w:5},{n:'Squad work',w:20},{n:'Final AI simulation',w:25},{n:'Written exam',w:50,fin:1}],
  MM:[{n:'Participation',w:10},{n:'Continuous assessment (capstone)',w:40},{n:'Final exam',w:50,fin:1}],

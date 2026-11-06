@@ -5,6 +5,12 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Grind · S3 finals</title>
 <link rel="icon" href="data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%20viewBox%3D%220%200%2032%2032%22%3E%3Crect%20width%3D%2232%22%20height%3D%2232%22%20rx%3D%229%22%20fill%3D%22%237c5cff%22/%3E%3Cpath%20d%3D%22M21.6%2010.2A8%208%200%201%200%2024%2016h-7%22%20stroke%3D%22%23fff%22%20stroke-width%3D%223.4%22%20fill%3D%22none%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22/%3E%3Cpath%20d%3D%22M25.5%203.8l.9%202.4%202.4.9-2.4.9-.9%202.4-.9-2.4-2.4-.9%202.4-.9z%22%20fill%3D%22%23fff%22/%3E%3C/svg%3E">
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#0e0d14">
+<link rel="apple-touch-icon" href="icons/icon-180.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Grind">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <style>
@@ -275,6 +281,30 @@ a.me{color:inherit;text-decoration:none;border-bottom:1px dashed rgba(255,255,25
 </style>
 <style>
 /* ===== Grind V6 ===== */
+.privov{position:fixed;inset:0;z-index:120;background:rgba(10,8,20,.6);display:flex;align-items:center;justify-content:center;padding:16px}
+.privbox{position:relative;width:min(820px,100%);height:min(88vh,900px);background:#fff;border-radius:20px;overflow:hidden;box-shadow:0 30px 80px rgba(0,0,0,.4)}
+.privbox iframe{width:100%;height:100%;border:0;display:block}
+.privx{position:absolute;top:12px;right:14px;z-index:2;background:#16141f;color:#fff}
+.replink{font-size:12px;color:var(--mut);text-decoration:none;white-space:nowrap}.replink:hover{color:var(--bad)}
+.qfoot{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-top:12px;flex-wrap:wrap}
+.authfoot{margin-top:12px;text-align:center;font-size:12px;color:var(--mut)}.authfoot a{color:var(--mut)}
+.tipnote{background:var(--acc2);border-radius:12px;padding:10px 14px;margin:10px 0}
+.demobox{margin-top:16px;padding:12px 14px;border-radius:12px;border:2px dashed var(--acc);background:var(--acc2);display:grid;gap:10px}
+.libtabs{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px}
+.libch{background:var(--card);border:1px solid var(--line);border-radius:16px;margin-bottom:10px;box-shadow:var(--sh)}
+.libch>summary{list-style:none;display:flex;align-items:center;gap:12px;padding:14px 16px;cursor:pointer}
+.libch>summary::-webkit-details-marker{display:none}
+.libch[open]>summary{border-bottom:1px solid var(--line)}
+.libn{flex:none;width:28px;height:28px;border-radius:9px;background:var(--acc2);color:var(--acc);font-weight:800;display:grid;place-items:center;font-size:13px}
+.libt{flex:1;font-weight:700}.libtags{display:flex;gap:6px;flex-wrap:wrap}
+.libb{padding:14px 18px 16px}
+.libres{margin-top:14px;padding:12px 14px;border-radius:12px;background:var(--bg)}
+.libres ul{margin:6px 0 0}
+.libfmt{margin-top:12px}.libfmt summary{cursor:pointer;font-weight:700;color:var(--acc)}
+.profhead{display:flex;gap:16px;align-items:center}
+.avatar{width:58px;height:58px;border-radius:18px;background:var(--acc);color:#fff;font-weight:800;font-size:22px;display:grid;place-items:center;flex:none}
+.seg.seg2{background:var(--bg);margin:0}.seg.seg2 button{color:var(--ink)}.seg.seg2 button.on{color:#fff}
+
 .layout[hidden]{display:none!important}
 .authbg{z-index:80}
 .authw{font-size:26px;font-weight:800;letter-spacing:-.04em;line-height:1}.authw span{color:var(--acc)}
@@ -305,10 +335,10 @@ a.me{color:inherit;text-decoration:none;border-bottom:1px dashed rgba(255,255,25
 <div id="modal"></div>
 <div id="drawer" class="drawer"></div>
 <noscript>Grind needs JavaScript.</noscript>
-<script>window.GRIND_BUILD='202611061616';</script>
-<script src="js/fr.js?v=202611061616"></script>
-<script src="js/i18n.js?v=202611061616"></script>
-<script src="js/supabase.js?v=202611061616"></script>
-<script src="js/auth.js?v=202611061616"></script>
+<script>window.GRIND_BUILD='202611061722';</script>
+<script src="js/fr.js?v=202611061722"></script>
+<script src="js/i18n.js?v=202611061722"></script>
+<script src="js/supabase.js?v=202611061722"></script>
+<script src="js/auth.js?v=202611061722"></script>
 </body>
 </html>

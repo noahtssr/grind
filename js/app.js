@@ -13,7 +13,7 @@ let view='home', subj=null, stab='overview', curCh=0, calMonth='2026-11', calSel
 const charts=[];
 
 const SHORT={DI:'Digital Innovation',AFA:'Financial Accounting',GT:'Grand Test',MS:'Market Structures',LV:'Spanish (LV1)',ECO:'Econometrics',ST:'Sales Techniques',MM:'Marketing Mgmt',COST:'Cost Accounting',OM:'Operations Mgmt',TL:'Trademark Law'};
-const NAV=[['home','🏠','Dashboard'],['review','🔁','Review'],['calendar','📅','Revision calendar'],['progress','📈','Progress'],['grades','🎯','Grades & targets'],['exams','⏳','Exam timetable']];
+const NAV=[['home','🏠','Dashboard'],['library','📚','Subjects'],['review','🔁','Review'],['calendar','📅','Revision calendar'],['progress','📈','Progress'],['grades','🎯','Grades & targets'],['profile','👤','My profile']];
 const T=todayStr();
 
 /* ================= HELPERS ================= */
@@ -79,9 +79,9 @@ function navHTML(mobile){
   <div class="navh">Subjects by exam week</div>
   ${gs.map(w=>{const o=isOpen(w,gs);return `<div class="wk ${w.past?'past':''}"><button class="wkh" data-wk="${w.mon}" aria-expanded="${o}"><span class="car">${o?'▾':'▸'}</span>${w.label}<span class="wkn">${w.ex.length}</span></button>
    ${o?`<div class="nav">${w.ex.map(e=>`<a class="${view==='subject'&&subj===e.id?'on':''}" data-s="${e.id}"><span class="dot" style="background:${COL[e.id]}"></span>${subName(e)}<span class="cd">${countdown(e)}</span></a>`).join('')}</div>`:''}</div>`;}).join('')}
-  <div class="navh">Language</div><div class="seg" role="group" aria-label="Site language"><button class="${UI_LANG()==='en'?'on':''}" data-ui="en">English</button><button class="${UI_LANG()==='fr'?'on':''}" data-ui="fr">Français</button></div><div class="nav"><a data-lang="1" title="Language of the notes, flashcards and MCQs"><span class="ico">${LANG==='fr'?'🇫🇷':'🇬🇧'}</span>${LANG==='fr'?'Course content: French':'Course content: English'}</a></div>`;
+  </div>`;
 }
-function bindNav(root){root.querySelectorAll('[data-ui]').forEach(b=>b.onclick=()=>{setUILang(b.dataset.ui);render();});root.querySelectorAll('[data-home]').forEach(a=>{a.onclick=()=>{drawer=false;go('home');};a.onkeydown=e=>{if(e.key==='Enter')a.onclick();};});root.querySelectorAll('[data-me]').forEach(a=>a.onclick=e=>{e.preventDefault();drawer=false;profileModal();});root.querySelectorAll('[data-wk]').forEach(b=>b.onclick=()=>{const gs=weekGroups(),w=gs.find(x=>x.mon===b.dataset.wk);wkOpen=wkOpen||{};wkOpen[w.mon]=!isOpen(w,gs);store('wkOpen',wkOpen);render();});root.querySelectorAll('[data-burger]').forEach(b=>b.onclick=()=>{drawer=true;render();});root.querySelectorAll('[data-close]').forEach(b=>b.onclick=()=>{drawer=false;render();});root.querySelectorAll('[data-v]').forEach(a=>a.onclick=()=>go(a.dataset.v));root.querySelectorAll('[data-s]').forEach(a=>a.onclick=()=>go('subject',a.dataset.s));root.querySelectorAll('[data-lang]').forEach(a=>a.onclick=()=>{LANG=LANG==='fr'?'course':'fr';store('lang',LANG);render();});}
+function bindNav(root){root.querySelectorAll('[data-ui]').forEach(b=>b.onclick=()=>{setUILang(b.dataset.ui);render();});root.querySelectorAll('[data-home]').forEach(a=>{a.onclick=()=>{drawer=false;go('home');};a.onkeydown=e=>{if(e.key==='Enter')a.onclick();};});root.querySelectorAll('[data-me]').forEach(a=>a.onclick=e=>{e.preventDefault();go('profile');});root.querySelectorAll('[data-wk]').forEach(b=>b.onclick=()=>{const gs=weekGroups(),w=gs.find(x=>x.mon===b.dataset.wk);wkOpen=wkOpen||{};wkOpen[w.mon]=!isOpen(w,gs);store('wkOpen',wkOpen);render();});root.querySelectorAll('[data-burger]').forEach(b=>b.onclick=()=>{drawer=true;render();});root.querySelectorAll('[data-close]').forEach(b=>b.onclick=()=>{drawer=false;render();});root.querySelectorAll('[data-v]').forEach(a=>a.onclick=()=>go(a.dataset.v));root.querySelectorAll('[data-s]').forEach(a=>a.onclick=()=>go('subject',a.dataset.s));root.querySelectorAll('[data-lang]').forEach(a=>a.onclick=()=>{LANG=LANG==='fr'?'course':'fr';store('lang',LANG);render();});}
 
 /* ================= TASKS ================= */
 function taskHTML(b,showDay){const e=EX[b.s];return `<div class="task ${done[b.key]?'done':''}" style="--sc:${COL[b.s]}"><input type="checkbox" data-k="${b.key}" ${done[b.key]?'checked':''}>
@@ -116,22 +116,17 @@ function viewHome(){
    <div class="card"><h2>📋 Today's plan${reviewCount()?`<span class="sp" style="flex:1"></span><button class="pill rvp" data-v="review">🔁 ${reviewCount()} to review</button>`:''}</h2>${!p?'<p class="mut">The plan covers 2 Nov – 16 Dec.</p>':(!p.off&&!p.blocs.length&&prof()&&T<prof().start)?`<p class="mut">Your revision starts on <b>${fmt(prof().start)}</b>. Until then, you can already explore the subjects, flashcards and MCQs.</p>`:p.off?`<p class="mut">Evening off. <button class="btn sm" id="unoff">Actually I'll study tonight</button></p>`:p.blocs.map(b=>taskHTML(b)).join('')+`<div style="margin-top:12px"><button class="btn sm" id="mkoff">I can't tonight</button> <span class="small mut">Blocks are redistributed over the next days.</span></div>`}</div>
    <div class="g">
     <div class="card chal ${cDone?'cdone':''}"><h2>⚔️ Daily challenge</h2><p class="small" style="margin:0 0 12px;opacity:.95">${cDone?`Done today: <b>${chal[T]}/10</b>. Come back tomorrow for a new one!`:'10 mixed questions from your next exams · 20 s each · combos = bonus XP'}</p><button class="btn ${cDone?'':'pri'} big" id="chalbtn">${cDone?'Play again':'Take the challenge · +100 XP'}</button></div>
-    <div class="card" style="text-align:center"><h2 style="text-align:left">⏱ Focus timer</h2><div class="timer" id="tm"></div><div class="small mut mb" id="tmm"></div><button class="btn pri" id="tgo">Start</button> <button class="btn" id="trs">Reset</button></div>
+   <div class="card"><h2>⏳ Next exams</h2>${next.map(e=>`<div class="grow" style="cursor:pointer" data-s="${e.id}"><span class="chip" style="--sc:${COL[e.id]}">${e.id}</span><div style="flex:1"><b>${e.name}</b><div class="small mut">${fmt(e.date)} · ${e.time}</div></div><div style="text-align:right">${reqBadge(e.id)}<div class="small mut">${countdown(e)}</div></div></div>`).join('')}<p class="small mut" style="margin:8px 0 0">Badge = grade needed at the final to get 10/20.</p></div>
    </div>
   </div>
-  <div class="g g2 mb">
-   <div class="card"><h2>⏳ Next exams</h2>${next.map(e=>`<div class="grow" style="cursor:pointer" data-s="${e.id}"><span class="chip" style="--sc:${COL[e.id]}">${e.id}</span><div style="flex:1"><b>${e.name}</b><div class="small mut">${fmt(e.date)} · ${e.time}</div></div><div style="text-align:right">${reqBadge(e.id)}<div class="small mut">${countdown(e)}</div></div></div>`).join('')}<p class="small mut" style="margin:8px 0 0">Badge = grade needed at the final to get 10/20.</p></div>
-   ${classesCard()}
-  </div>
-  <div class="card mb"><h2>🏅 Badges <span class="small mut">${Object.keys(badges).length}/${BADGES.length} unlocked</span></h2><div class="badges">${BADGES.map(([id,ic,n,d])=>`<div class="bdg ${badges[id]?'on':''}" title="${d}"><div class="bi">${ic}</div><div class="bn">${n}</div><div class="bd">${d}</div></div>`).join('')}</div></div>
-  <div class="card"><h2>📚 Subjects at a glance</h2><div class="g g3">${EXAMS.map(e=>{const pr=prog(e.id);return `<div class="sgl" style="--sc:${COL[e.id]}" data-s="${e.id}"><div style="display:flex;justify-content:space-between;align-items:center"><b class="small">${e.name}</b><span class="small" style="font-weight:700;color:${COL[e.id]}">${pr.p}%</span></div><div class="bar" style="margin:8px 0 4px"><i style="width:${pr.p}%"></i></div><div class="small mut">${countdown(e)} · ${fmt(e.date)}</div></div>`}).join('')}</div></div>`;
+  <div class="mb">${classesCard()}</div>
+  `;
   app.innerHTML=html; bindTasks(app); bindNav(app); bindClasses(app);
   app.querySelectorAll('.cta[data-start]').forEach(b=>b.onclick=()=>startSession(b.dataset.start));
   app.querySelectorAll('[data-cram]').forEach(b=>b.onclick=()=>{subj=b.dataset.cram;view='cram';render();window.scrollTo(0,0);});
   document.getElementById('chalbtn').onclick=startChallenge;
   const mk=document.getElementById('mkoff'); if(mk) mk.onclick=()=>{off[T]=1;store('off',off);PLAN=buildPlan();render();};
   const un=document.getElementById('unoff'); if(un) un.onclick=()=>{delete off[T];store('off',off);PLAN=buildPlan();render();};
-  timerBind();
 }
 function timerBind(){const el=document.getElementById('tm'),m=document.getElementById('tmm'),g=document.getElementById('tgo'),r=document.getElementById('trs');if(!el)return;
  const show=()=>{el.textContent=String(Math.floor(tmLeft/60)).padStart(2,'0')+':'+String(tmLeft%60).padStart(2,'0');m.textContent=tmMode==='work'?'Focus':'Break';g.textContent=tmInt?'Pause':'Start';document.title=tmInt?el.textContent+' · '+(tmMode==='work'?'Focus':'Break'):'Révisions partiels — Noah';};
@@ -177,6 +172,7 @@ function viewProgress(){
    <div class="card kpi"><div class="v">${Math.round(ids.reduce((a,s)=>a+qP(s),0)/ids.length)}%</div><div class="l">MCQs answered right</div></div>
   </div>
   ${squadCard()}
+  <div class="card mb"><h2>🏅 Badges <span class="small mut">${Object.keys(badges).length}/${BADGES.length} unlocked</span></h2><div class="badges">${BADGES.map(([id,ic,n,d])=>`<div class="bdg ${badges[id]?'on':''}" title="${d}"><div class="bi">${ic}</div><div class="bn">${n}</div><div class="bd">${d}</div></div>`).join('')}</div></div>
   <div class="card mb"><h2>Planned vs done (cumulative blocks)</h2><div style="height:260px"><canvas id="c1"></canvas></div></div>
   <div class="g g2 mb"><div class="card"><h2>Plan completion by subject</h2><div style="height:300px"><canvas id="c2"></canvas></div></div>
   <div class="card"><h2>Mastery by subject</h2><div style="height:300px"><canvas id="c3"></canvas></div></div></div>
@@ -251,11 +247,11 @@ function viewSubject(){
   }
   if(stab==='notes'){
     h+=`<div class="card"><div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center"><select id="chsel">${chs.map((x,i)=>`<option value="${i}" ${i===curCh?'selected':''}>${x.t}</option>`).join('')}</select><span class="sp"></span><button class="btn sm" id="pv" ${curCh===0?'disabled':''}>← Prev</button><button class="btn sm" id="nx" ${curCh===chs.length-1?'disabled':''}>Next →</button></div>`;
-    const f=c.fiches&&c.fiches[curCh]; h+=f?`<div style="margin-top:14px" data-notr>${f}</div>`:`<p class="mut" style="margin-top:14px">No notes for this chapter yet — use the professor's material below.</p>`;
+    const f=c.fiches&&c.fiches[curCh]; h+=f?`<div style="margin-top:14px" data-notr>${f}</div><div style="text-align:right;margin-top:8px"><a href="#" class="replink" data-rep="n|${subj}|${curCh}">⚑ Report an error</a></div>`:`<p class="mut" style="margin-top:14px">No notes for this chapter yet — use the professor's material below.</p>`;
     const res=chs[curCh].res; if(res.length) h+=`<h3>Professor's material</h3><ul>${res.map(r=>`<li><a href="${r[1]}" target="_blank" rel="noopener">${r[0]}</a></li>`).join('')}</ul>`;
     h+=`</div>`;
   }
-  if(stab==='flash') h+=c.cards?`<div class="card"><div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:12px"><span class="small mut" id="fn"></span><span class="sp" style="flex:1"></span><label class="small"><input type="checkbox" id="onlyU"> only cards I don't know yet</label><button class="btn sm" id="fs">Shuffle</button><button class="btn sm" id="fmy">✏️ My cards (${(myCards[subj]||[]).length})</button><button class="btn sm" id="fexp">✍️ Explain-it mode</button></div><div class="flash" id="fc"></div><div style="display:flex;gap:10px;justify-content:center;margin-top:14px;flex-wrap:wrap"><button class="btn" id="fp">←</button><button class="btn" id="fno" style="border-color:var(--bad)">✗ Didn't know</button><button class="btn" id="fyes" style="border-color:var(--ok)">✓ Knew it</button><button class="btn" id="fx">→</button></div><p class="small mut" style="text-align:center">Click the card to flip it.</p></div>`:`<div class="card"><p class="mut">No flashcards for this subject yet.</p><button class="btn pri" id="fmy">✏️ Create my own cards</button></div>`;
+  if(stab==='flash') h+=c.cards?`<div class="card"><div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:12px"><span class="small mut" id="fn"></span><span class="sp" style="flex:1"></span><label class="small"><input type="checkbox" id="onlyU"> only cards I don't know yet</label><button class="btn sm" id="fs">Shuffle</button><button class="btn sm" id="fmy">✏️ My cards (${(myCards[subj]||[]).length})</button><button class="btn sm" id="fexp">✍️ Explain-it mode</button></div><div class="flash" id="fc"></div><div style="display:flex;gap:10px;justify-content:center;margin-top:14px;flex-wrap:wrap"><button class="btn" id="fp">←</button><button class="btn" id="fno" style="border-color:var(--bad)">✗ Didn't know</button><button class="btn" id="fyes" style="border-color:var(--ok)">✓ Knew it</button><button class="btn" id="fx">→</button></div><p class="small mut" style="text-align:center">Click the card to flip it. <a href="#" class="replink" id="frep" data-rep="">⚑ Report an error</a></p></div>`:`<div class="card"><p class="mut">No flashcards for this subject yet.</p><button class="btn pri" id="fmy">✏️ Create my own cards</button></div>`;
   if(stab==='mcq') h+=CONTENT[subj].qcm?`<div class="card" id="qz"></div>`:'<div class="card mut">No MCQ for this subject yet.</div>';
   if(stab==='exos') h+=exosTab(c);
   if(stab==='exam') h+=examTab();
@@ -279,7 +275,7 @@ function flashBind(cards){
   const el=document.getElementById('fc'), n=document.getElementById('fn');
   const list=()=>only?order.filter(k=>fcm[s][k]!==1):order;
   const show=()=>{const L=list(); if(!L.length){el.textContent='🎉 You know all the cards!';n.textContent='';return;} if(i>=L.length)i=0; const k=L[i], cd=cards[k];
-    el.textContent=back?cd[1]:cd[0]; el.style.fontWeight=back?'400':'700'; const known=Object.values(fcm[s]).filter(v=>v===1).length;
+    el.textContent=back?cd[1]:cd[0]; el.style.fontWeight=back?'400':'700'; {const fr=document.getElementById('frep');if(fr)fr.dataset.rep='c|'+s+'|'+k;} const known=Object.values(fcm[s]).filter(v=>v===1).length;
     n.textContent=`${i+1} / ${L.length}${back?' · back':''} · mastered ${known}/${cards.length}${fcm[s][k]===1?' · ✓ known':fcm[s][k]===0?' · ✗ to review':''}${k>=baseCards(s).length?' · ✏️ your card':''}`;};
   el.onclick=()=>{back=!back;show();};
   const mark=v=>{const L=list();if(!L.length)return;fcm[s][L[i]]=v;store('fcm',fcm);srsMark(s,L[i],v);if(v===1)addXP(5,'· card known',`fc|${s}|${L[i]}`);back=false;if(!(only&&v===1))i++;show();};
@@ -310,7 +306,7 @@ function quizBind(qs){
       const exFr=((window.EXPL||{})[s]||[])[k], enS=(window.EN||{})[s], exEn=enS&&enS.expl?enS.expl[k]:null;
       const main=LANG==='fr'?exFr:(exEn||exFr), second=LANG==='fr'?exEn:(exEn?exFr:null);
       const okL=s==='LV'?'✅ ¡Correcto!':'✅ Correct.', badL=s==='LV'?'❌ Respuesta correcta: ':'❌ Correct answer: ';
-      document.getElementById('qn').innerHTML=`<div class="explain ${ok?'okx':'badx'}"><b>${ok?okL:badL+q[1][q[2]]+'.'}</b>${main?' '+main:''}${second?`<div class="small mut" style="margin-top:6px">${LANG==='fr'?'🇬🇧':'🇫🇷'} ${second}</div>`:''}</div><button class="btn pri" id="nxq" style="margin-top:12px">Next →</button>`;
+      document.getElementById('qn').innerHTML=`<div class="explain ${ok?'okx':'badx'}"><b>${ok?okL:badL+q[1][q[2]]+'.'}</b>${main?' '+main:''}${second?`<div class="small mut" style="margin-top:6px">${LANG==='fr'?'🇬🇧':'🇫🇷'} ${second}</div>`:''}</div><div class="qfoot"><button class="btn pri" id="nxq">Next →</button><a href="#" class="replink" data-rep="q|${s}|${k}">⚑ Report an error</a></div>`;
       document.getElementById('nxq').onclick=()=>{i++;showQ();};});
   };
   showQ();
@@ -361,7 +357,7 @@ function runQuiz(box,items,opts){
       qm[s]=qm[s]||{};qm[s][k]=ok?1:0;store('qm',qm);
       if(ok){score++;combo++;best=Math.max(best,combo);addXP(10+(combo>=3?5:0),combo>=3?`· combo x${combo}`:'');}else combo=0;
       const exFr=((window.EXPL||{})[s]||[])[k],enS=(window.EN||{})[s],exEn=enS&&enS.expl?enS.expl[k]:null,main=LANG==='fr'?exFr:(exEn||exFr),sec=LANG==='fr'?exEn:(exEn?exFr:null);
-      box.querySelector('#qx').innerHTML=`<div class="explain ${ok?'okx':'badx'}"><b>${ok?'✅ Correct!':j<0?'⏰ Time\'s up! Answer: '+q[1][q[2]]+'.':'❌ Answer: '+q[1][q[2]]+'.'}</b> ${main||''}${sec?`<div class="small mut" style="margin-top:6px">${LANG==='fr'?'🇬🇧':'🇫🇷'} ${sec}</div>`:''}</div><button class="btn pri" id="qn2" style="margin-top:12px">Next →</button>`;
+      box.querySelector('#qx').innerHTML=`<div class="explain ${ok?'okx':'badx'}"><b>${ok?'✅ Correct!':j<0?'⏰ Time\'s up! Answer: '+q[1][q[2]]+'.':'❌ Answer: '+q[1][q[2]]+'.'}</b> ${main||''}${sec?`<div class="small mut" style="margin-top:6px">${LANG==='fr'?'🇬🇧':'🇫🇷'} ${sec}</div>`:''}</div><div class="qfoot"><button class="btn pri" id="qn2">Next →</button><a href="#" class="replink" data-rep="q|${s}|${k}">⚑ Report an error</a></div>`;
       box.querySelector('#qn2').onclick=()=>{i++;next();};};
     box.querySelectorAll('.opt').forEach(b=>b.onclick=()=>answer(+b.dataset.j));
     if(opts.timer){left=opts.timer;const el=box.querySelector('#qt');const upd=()=>{el.textContent='⏱ '+left+'s';el.classList.toggle('low',left<=5);};upd();tm=setInterval(()=>{left--;upd();if(left<=0)answer(-1);},1000);}
@@ -430,7 +426,7 @@ function cardRun(list,opts){
     const {s,i:k}=list[i],cd=contentFor(s).cards[k];
     m.innerHTML=`<div class="modal"><div class="box sess"><div class="shead"><div><div class="small" style="opacity:.85">${write?'✍️ Explain-it mode · write your answer first':'Tap the card to flip it'}</div><b>${opts.title||'Review'}</b></div><div class="sp"></div><span class="stimer" style="font-size:15px">${i+1}/${list.length}</span><button class="xbtn" id="rc">✕</button></div>
      <div class="sbody"><div style="display:flex;gap:8px;align-items:center;margin-bottom:10px"><span class="chip" style="--sc:${COL[s]}">${s}</span><span class="sp" style="flex:1"></span><label class="small"><input type="checkbox" id="wm" ${write?'checked':''}> ✍️ Explain-it mode</label></div>
-     <div class="flash big ${back?'back':''}" id="rcd">${back?cd[1]:cd[0]}</div>
+     <div class="flash big ${back?'back':''}" id="rcd">${back?cd[1]:cd[0]}</div><div style="text-align:right;margin-top:6px"><a href="#" class="replink" data-rep="c|${s}|${k}">⚑ Report an error</a></div>
      ${write&&!back?`<textarea id="wa" rows="4" placeholder="Write your answer in ${s==='LV'?'Spanish':'English'}, then reveal" style="width:100%;margin-top:12px;font:inherit;padding:10px;border-radius:12px;border:1px solid var(--line);background:var(--card);color:var(--ink)"></textarea><div class="sfoot"><button class="btn pri big" id="rev">Reveal the answer</button></div>`:''}
      ${write&&back&&draw.mine?`<div class="note" style="margin-top:12px"><b>Your answer:</b> ${draw.mine.replace(/</g,'&lt;')}</div><p class="small mut">Compare with the card: did you get the key idea?</p>`:''}
      ${back||!write?`<div class="sfoot"><button class="btn bad2" id="no">✗ Didn't know</button><button class="btn ok2" id="yes">✓ Knew it</button></div>`:''}</div></div></div>`;
@@ -602,7 +598,7 @@ async function squadBind(){
 }
 
 /* ================= OUTLOOK TIMETABLE (optional) + CLASS SUMMARIES ================= */
-const SUBJ_RX=[[/DIGITAL INNOVATION/i,'DI'],[/ADVANCED FINANCIAL ACCOUNTING/i,'AFA'],[/MARKET STRUCTURES/i,'MS'],[/ESPAGNOL|SPANISH/i,'LV'],[/ECONOMETRICS/i,'ECO'],[/SALES TECHNIQUES/i,'ST'],[/MARKETING MANAGEMENT/i,'MM'],[/COST ACCOUNTING/i,'COST'],[/OPERATIONS MANAGEMENT/i,'OM'],[/TRADEMARK LAW/i,'TL']];
+const SUBJ_RX=[[/DIGITAL INNOVATION/i,'DI'],[/ADVANCED FINANCIAL ACCOUNTING/i,'AFA'],[/MARKET STRUCTURES/i,'MS'],[/ECONOMETRICS/i,'ECO'],[/SALES TECHNIQUES/i,'ST'],[/MARKETING MANAGEMENT/i,'MM'],[/COST ACCOUNTING/i,'COST'],[/OPERATIONS MANAGEMENT/i,'OM'],[/TRADEMARK LAW/i,'TL']];
 const ICS_RX=/^https:\/\/outlook\.office(365)?\.com\/owa\/calendar\/[^\/\s]+\/[^\/\s]+\/(calendar|reachcalendar)\.ics$/i;
 let ICS=null,icsState='none',SUMS=null;
 function parseICS(txt){
@@ -628,19 +624,28 @@ async function loadICS(force){
 async function loadSums(){if(SUMS||!SB)return;const {data}=await SB.from('summaries').select('subj,session,title,html,ch');SUMS={};(data||[]).forEach(r=>{SUMS[r.subj+'|'+r.session]=r;});}
 const classesOn=day=>(ICS||[]).filter(x=>x.day===day).sort((a,b)=>a.start<b.start?-1:1);
 const nowHM=()=>{const n=new Date();return String(n.getHours()).padStart(2,'0')+':'+String(n.getMinutes()).padStart(2,'0');};
+
+/* auto class summaries from the course notes (session → chapter) */
+const SESSION_CH={DI:n=>n<=9?n-1:null,ST:n=>n<=7?n-1:null,MM:n=>n<=7?n-1:null,COST:n=>n<=6?n-1:null,TL:n=>n<=6?n-1:(n===8?6:null),OM:n=>[0,1,2,3,3,4,5,6,6][n-1]??null,AFA:n=>n<=9?n-1:null};
+function autoSummary(s,n){const f=SESSION_CH[s];if(!f)return null;const ch=f(n);if(ch==null)return null;const c=contentFor(s),fi=c.fiches&&c.fiches[ch],t=(CH[s][ch]||{}).t;if(!fi)return null;
+  const d=document.createElement('div');d.innerHTML=fi;const lis=[...d.querySelectorAll('li')].filter(li=>!li.querySelector('li')&&li.querySelector('b'));
+  const pts=(lis.length?lis:[...d.querySelectorAll('li')]).slice(0,7).map(li=>{const h=li.innerHTML;return h.length>320?h.slice(0,h.lastIndexOf(' ',300))+'…':h;});
+  if(!pts.length)return null;return {title:t,ch,html:`<ul>${pts.map(p=>`<li>${p}</li>`).join('')}</ul><p class="small mut" style="margin:6px 0">${(window.t||(s=>s))("Key points of this session's chapter, from your course notes.")}</p>`};}
+
 function classesCard(){
   if(!store('ics'))return `<div class="card"><h2>🏫 Your classes</h2><p class="mut" style="margin-top:-4px">Connect your Outlook timetable to see your classes of the day and get <b>a summary of each class as soon as it ends</b>.</p><button class="btn pri" data-ics="1">Connect my timetable</button><p class="small mut" style="margin:10px 0 0">Optional · takes 2 minutes · you can remove it anytime.</p></div>`;
   if(icsState==='loading'||icsState==='none')return `<div class="card"><h2>🏫 Today's classes</h2><p class="mut">Loading your timetable…</p></div>`;
   if(icsState==='error')return `<div class="card"><h2>🏫 Today's classes</h2><p class="mut">Your Outlook timetable couldn't be loaded. Check that the link is still published.</p><button class="btn sm" data-ics="1">Check my link</button> <button class="btn sm" id="icsretry">Retry</button></div>`;
   const tc=classesOn(T),now=nowHM();
-  return `<div class="card"><h2>🏫 Today's classes<span class="sp" style="flex:1"></span><a href="#" class="small" data-ics="1" style="font-weight:500">Timetable ⚙</a></h2>${tc.length?tc.map(x=>{const ended=x.end&&T===todayStr()&&now>=x.end,sm=x.s&&SUMS?SUMS[x.s+'|'+x.session]:null;
+  return `<div class="card"><h2>🏫 Today's classes<span class="sp" style="flex:1"></span><a href="#" class="small" data-ics="1" style="font-weight:500">Timetable ⚙</a></h2>${tc.length?tc.map(x=>{const ended=x.end&&T===todayStr()&&now>=x.end,sm=x.s?((SUMS&&SUMS[x.s+'|'+x.session])||autoSummary(x.s,x.session)):null;
     return `<div class="cls ${x.cancel?'cx':''}"><div class="clh"><span class="small mut" style="width:92px;flex:none">${x.start}${x.end?'–'+x.end:''}</span><div style="flex:1;min-width:0"><b>${x.s?EX[x.s].name:x.name}</b>${x.cancel?' <span class="pill bad">cancelled</span>':''}<div class="small mut">${[x.room,x.s&&!x.cancel?'Session '+x.session:''].filter(Boolean).join(' · ')}</div></div></div>
-     ${x.s&&!x.cancel?(ended?(sm?`<details class="sumd"><summary>📝 Class summary · ${sm.title}</summary><div class="sumb">${sm.html}${sm.ch!=null?`<a href="#" data-open="${x.s}" data-ch="${sm.ch}">Open the full notes →</a>`:''}</div></details>`:`<div class="small mut sumw">📝 Summary of this class: added tonight.</div>`):`<div class="small mut sumw">📝 Summary available when the class ends${x.end?' ('+x.end+')':''}.</div>`):''}</div>`;}).join(''):'<p class="mut">No classes today.</p>'}</div>`;
+     ${x.s&&!x.cancel?(ended?(sm?`<details class="sumd"><summary>📝 Class summary · ${sm.title}</summary><div class="sumb" data-notr>${sm.html}${sm.ch!=null?`<a href="#" data-open="${x.s}" data-ch="${sm.ch}">${(window.t||(s=>s))('Open the full notes →')}</a>`:''}</div></details>`:`<div class="small mut sumw">📝 No summary for this session: <a href="#" data-libopen="${x.s}">open the ${x.s} notes →</a></div>`):`<div class="small mut sumw">📝 Summary available when the class ends${x.end?' ('+x.end+')':''}.</div>`):''}</div>`;}).join(''):'<p class="mut">No classes today.</p>'}</div>`;
 }
 function bindClasses(root){
   root.querySelectorAll('[data-ics]').forEach(b=>b.onclick=e=>{e.preventDefault();icsModal();});
   const r=document.getElementById('icsretry');if(r)r.onclick=async()=>{await loadICS(true);render();};
   root.querySelectorAll('[data-open]').forEach(a=>a.onclick=e=>{e.preventDefault();subj=a.dataset.open;view='subject';stab='notes';curCh=+a.dataset.ch||0;render();window.scrollTo(0,0);});
+  root.querySelectorAll('[data-libopen]').forEach(a=>a.onclick=e=>{e.preventDefault();libS=a.dataset.libopen;go('library');});
 }
 function icsModal(){
   const m=document.getElementById('modal'),cur=store('ics')||'';
@@ -738,7 +743,7 @@ function onboarding(mode){ /* mode: 'new' | 'edit' */
   };
   draw();
 }
-function wipeAll(){SYNC_KEYS.concat(['profile','qstats','squadOn']).forEach(k=>{if(k==='ics')return;try{localStorage.removeItem(SPX+k)}catch(e){}});window.__P=null;reloadState();try{localStorage.setItem(SPX+'_at',String(Date.now()))}catch(e){}schedulePush();}
+function wipeAll(){SYNC_KEYS.concat(['profile','qstats','squadOn']).forEach(k=>{if(k==='ics'||k==='myCards'||k==='lang')return;try{localStorage.removeItem(SPX+k)}catch(e){}});window.__P=null;reloadState();try{localStorage.setItem(SPX+'_at',String(Date.now()))}catch(e){}schedulePush();}
 function profileModal(){
   const P=prof();if(!P){onboarding('new');return;}const m=document.getElementById('modal');
   m.innerHTML=`<div class="modal"><div class="box" style="max-width:460px"><div style="display:flex;align-items:center;gap:12px"><div class="xpw" style="background:var(--acc2);flex:1"><div class="lv">${(P.first[0]||'?').toUpperCase()}${(P.last[0]||'').toUpperCase()}</div><div><b>${P.first.replace(/</g,'')} ${P.last.replace(/</g,'')}</b><div class="small mut">${(window.ME_EMAIL||'').replace(/</g,'')}</div><div class="small mut">Revision from ${fmt(P.start)} · weekdays ${hm(P.wk)} · Sat ${hm(P.sat)} · Sun ${hm(P.sun)}</div></div></div></div>
@@ -757,16 +762,116 @@ function profileModal(){
   document.getElementById('preset').onclick=e=>{const b=e.target;if(b.dataset.sure!=='1'){b.dataset.sure='1';b.textContent='Tap again to erase all your progress';b.style.background='var(--badbg)';return;}m.innerHTML='';onboarding('new');};
 }
 
+
+
+/* ================= REPORT AN ERROR ================= */
+function repItem(ref){const [t,s,k]=ref.split('|');const n=+k;
+  try{if(t==='q'){const q=CONTENT[s].qcm[n];return 'MCQ: '+q[0]+' | Options: '+q[1].map((o,j)=>'ABCD'[j]+') '+o).join(' ')+' | Marked answer: '+'ABCD'[q[2]];}
+    if(t==='c'){const cd=contentFor(s).cards[n];return 'Card: '+cd[0]+' → '+cd[1];}
+    if(t==='n'){return 'Notes: '+((CH[s]||[])[n]||{}).t;}}catch(e){}return ref;}
+function reportModal(ref){
+  const m=document.getElementById('modal'),prev=m.innerHTML,isPriv=ref==='privacy';const [t,s]=ref.split('|');
+  const kinds=isPriv?[['privacy','Question about my data']]:[['wrong','Wrong answer'],['typo','Typo'],['unclear','Unclear'],['other','Other']];
+  const wrap=document.createElement('div');wrap.className='modal';wrap.style.zIndex=90;
+  wrap.innerHTML=`<div class="box" style="max-width:520px"><h2>${isPriv?'✉️ Contact about my data':'⚑ Report an error'}</h2>${isPriv?'<p class="mut" style="margin-top:-4px">Your message goes to the creator of Grind with your account email, so he can answer you.</p>':`<p class="mut" style="margin-top:-4px">Thanks! The creator of Grind will check it and fix the content for everyone.</p><div class="small note" data-notr style="max-height:110px;overflow:auto"></div>`}
+   <div class="chips" style="margin:12px 0">${kinds.map((x,i)=>`<button class="chipb ${i===0?'on':''}" data-kind="${x[0]}">${x[1]}</button>`).join('')}</div>
+   <textarea id="repc" rows="4" maxlength="1500" placeholder="${isPriv?'Your question or request (e.g. a copy of my data)':'What is wrong? (optional)'}" style="width:100%;font:inherit;padding:10px 12px;border-radius:12px;border:1px solid var(--line);background:var(--bg);color:var(--ink)"></textarea>
+   <div id="repe" class="oerr"></div><div style="display:flex;gap:10px;justify-content:flex-end"><button class="btn" id="repx">Cancel</button><button class="btn pri" id="reps">Send</button></div></div>`;
+  document.body.appendChild(wrap);const nt=wrap.querySelector('.note');if(nt)nt.textContent=repItem(ref);
+  let kind=kinds[0][0];wrap.querySelectorAll('[data-kind]').forEach(b=>b.onclick=()=>{kind=b.dataset.kind;wrap.querySelectorAll('[data-kind]').forEach(x=>x.classList.toggle('on',x===b));});
+  const close=()=>wrap.remove();wrap.querySelector('#repx').onclick=close;
+  wrap.querySelector('#reps').onclick=async e=>{const c=wrap.querySelector('#repc').value.trim();if(isPriv&&!c){wrap.querySelector('#repe').textContent=t_('Write your message first.');return;}
+    e.target.disabled=true;const {error}=await SB.from('reports').insert({user_id:_me,subj:isPriv?null:(s||null),kind,ref:ref.slice(0,60),item:isPriv?(window.ME_EMAIL||''):repItem(ref).slice(0,1500),comment:c.slice(0,1500)});
+    if(error){e.target.disabled=false;wrap.querySelector('#repe').textContent=t_('Couldn\'t send it. Check your connection and try again.');return;}close();toast(t_(isPriv?'✉️ Message sent':'✓ Thanks, error reported'));};
+}
+const t_=s=>(window.t?window.t(s):s);
+document.addEventListener('click',e=>{const a=e.target.closest&&e.target.closest('[data-rep]');if(!a)return;e.preventDefault();e.stopPropagation();if(a.dataset.rep)reportModal(a.dataset.rep);},true);
+
+
+/* ================= ADMIN (creator only) ================= */
+let ADMIN=false,admTab='open';
+async function checkAdmin(){try{const {data}=await SB.rpc('is_grind_admin');if(data===true&&!ADMIN){ADMIN=true;NAV.push(['admin','🛠','Admin']);render();}}catch(e){}}
+async function viewAdmin(){
+  if(!ADMIN){go('home');return;}
+  app.innerHTML=`<div class="top"><h1>🛠 Admin</h1><span class="sp"></span><button class="btn sm" id="admr">Refresh</button></div><div id="admk" class="g g4 mb"></div><div class="card"><div class="libtabs" style="margin-bottom:8px"><button class="chipb ${admTab==='open'?'on':''}" data-at="open">To fix</button><button class="chipb ${admTab==='done'?'on':''}" data-at="done">Fixed</button></div><div id="adml"><p class="mut">Loading…</p></div></div>`;
+  document.getElementById('admr').onclick=()=>viewAdmin();
+  app.querySelectorAll('[data-at]').forEach(b=>b.onclick=()=>{admTab=b.dataset.at;viewAdmin();});
+  const [st,rp]=await Promise.all([SB.rpc('grind_stats'),SB.from('reports').select('id,subj,kind,ref,item,comment,status,created_at').eq('status',admTab).order('created_at',{ascending:false}).limit(200)]);
+  const k=document.getElementById('admk');if(!k)return;const s=st.data||{};
+  k.innerHTML=[['👥',s.users,'accounts'],['✅',s.confirmed,'confirmed emails'],['🔥',s.active7,'active this week'],['⚑',s.open_reports,'reports to fix']].map(x=>`<div class="kpi"><div class="v">${x[0]} ${x[1]??'—'}</div><div class="l">${x[2]}</div></div>`).join('');
+  const L=document.getElementById('adml'),rows=rp.data||[];
+  const K={wrong:'Wrong answer',typo:'Typo',unclear:'Unclear',other:'Other',privacy:'Data request'};
+  L.innerHTML=rows.length?rows.map(r=>`<div class="grow" style="align-items:flex-start"><div style="flex:1;min-width:0"><div class="small"><span class="pill ${r.kind==='privacy'?'bad':''}">${K[r.kind]||r.kind}</span> ${r.subj?`<b>${r.subj}</b>`:''} <span class="mut">${new Date(r.created_at).toLocaleString(UI_LANG()==='fr'?'fr-FR':'en-GB',{dateStyle:'short',timeStyle:'short'})} · ${r.ref||''}</span></div><div class="adm-i small" data-notr style="margin-top:4px"></div><div class="adm-c" data-notr style="margin-top:4px"></div></div>${r.status==='open'?`<button class="btn sm" data-done="${r.id}">✓ Fixed</button>`:`<button class="btn sm" data-reopen="${r.id}">Reopen</button>`}</div>`).join(''):'<p class="mut">Nothing here.</p>';
+  L.querySelectorAll('.adm-i').forEach((el,i)=>el.textContent=rows[i].item||'');L.querySelectorAll('.adm-c').forEach((el,i)=>{el.textContent=rows[i].comment?'💬 '+rows[i].comment:'';});
+  L.querySelectorAll('[data-done],[data-reopen]').forEach(b=>b.onclick=async()=>{const id=+(b.dataset.done||b.dataset.reopen);b.disabled=true;await SB.from('reports').update({status:b.dataset.done?'done':'open'}).eq('id',id);viewAdmin();});
+}
+
+/* ================= SUBJECTS LIBRARY (read-only) ================= */
+let libS=null;const libOpen={};
+function viewLibrary(){
+  const s=libS&&EX[libS]?libS:EXAMS[0].id;libS=s;const e=EX[s],c=contentFor(s),chs=CH[s]||[];
+  app.innerHTML=`<div class="top"><h1>📚 Subjects</h1></div>
+  <p class="mut" style="margin:-6px 0 14px">Read your notes and open your professors' material, chapter by chapter. Nothing here changes your plan or your progress.</p>
+  <div class="libtabs">${EXAMS.map(x=>`<button class="chipb ${x.id===s?'on':''}" data-lib="${x.id}">${x.id}</button>`).join('')}</div>
+  <div class="card mb"><div style="display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;align-items:flex-start"><div><h2 style="margin:0">${e.name}</h2><div class="small mut">${fmt(e.date)} · ${e.time} · ${countdown(e)}</div></div><button class="btn sm" data-practise="${s}">Practise this subject →</button></div>
+   ${c.format?`<details class="libfmt"><summary>Exam format</summary><div class="note" style="margin-top:8px">${c.format}</div></details>`:''}</div>
+  ${chs.map((x,i)=>{const f=c.fiches&&c.fiches[i],k=s+'|'+i;return `<details class="libch" data-k="${k}" ${libOpen[k]?'open':''}><summary><span class="libn">${i+1}</span><span class="libt">${x.t}</span><span class="libtags">${f?'<span class="pill">Notes</span>':''}${x.res.length?`<span class="pill">📎 ${x.res.length}</span>`:''}</span></summary>
+    <div class="libb">${f?`<div data-notr class="libnotes">${f}</div><div style="text-align:right;margin-top:6px"><a href="#" class="replink" data-rep="n|${s}|${i}">⚑ Report an error</a></div>`:'<p class="mut">No notes for this chapter yet: open the professor\'s material below.</p>'}
+    ${x.res.length?`<div class="libres"><b>📎 Professor's material</b><div class="small mut">On MyCourses (log in to open it).</div><ul>${x.res.map(r=>`<li><a href="${r[1]}" target="_blank" rel="noopener">${r[0]}</a></li>`).join('')}</ul></div>`:''}</div></details>`;}).join('')||'<div class="card mut">No chapters for this subject yet.</div>'}`;
+  app.querySelectorAll('[data-lib]').forEach(b=>b.onclick=()=>{libS=b.dataset.lib;render();window.scrollTo(0,0);});
+  app.querySelectorAll('details.libch').forEach(d=>d.ontoggle=()=>{libOpen[d.dataset.k]=d.open;});
+  app.querySelectorAll('[data-practise]').forEach(b=>b.onclick=()=>go('subject',b.dataset.practise));
+}
+
+/* ================= MY PROFILE ================= */
+let profEdit=null;
+function viewProfile(){
+  const P=prof()||{first:'',last:''},ini=((P.first||'?')[0]+(P.last||'')[0]||'').toUpperCase();
+  const esc=s=>String(s||'').replace(/[&<>"]/g,ch=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[ch]));
+  const sec=(t,body)=>`<div class="card mb"><h2>${t}</h2>${body}</div>`;
+  app.innerHTML=`<div class="top"><h1>👤 My profile</h1></div>
+  <div class="card mb profhead"><div class="avatar">${esc(ini)}</div><div style="flex:1;min-width:0"><h2 style="margin:0">${esc(P.first)} ${esc(P.last)}</h2><div class="small mut">${esc(window.ME_EMAIL||'')}</div><div class="small" style="margin-top:4px">Level ${lvl()} · ${title()} · ${xp} XP</div></div></div>
+  <div class="g g2">
+  <div>
+  ${sec('⏱ Study time',(P.start?`<p class="mut" style="margin-top:-4px">Revision from <b>${fmt(P.start)}</b> · weekdays <b>${hm(P.wk)}</b> · Sat <b>${hm(P.sat)}</b> · Sun <b>${hm(P.sun)}</b></p>`:'<p class="mut">Not set yet.</p>')+'<button class="btn pri" id="pf-time">Change my study time</button>')}
+  ${sec('🗓 Outlook timetable',store('ics')?`<p class="mut" style="margin-top:-4px">Connected: your classes and class summaries appear on the dashboard.</p><button class="btn" id="pf-ics">Manage my timetable</button>`:`<p class="mut" style="margin-top:-4px">Not connected. Connect it to see your classes of the day and a summary of each class as soon as it ends.</p><button class="btn pri" id="pf-ics">Connect my timetable</button>`)}
+  ${sec('🌍 Language',`<div class="small mut" style="margin:-4px 0 6px">Site language</div><div class="seg seg2" role="group" aria-label="Site language"><button class="${UI_LANG()==='en'?'on':''}" data-ui="en">English</button><button class="${UI_LANG()==='fr'?'on':''}" data-ui="fr">Français</button></div>
+    <div class="small mut" style="margin:12px 0 6px">Course content (notes, flashcards, MCQs)</div><div class="seg seg2" role="group" aria-label="Course content language"><button class="${LANG!=='fr'?'on':''}" data-cl="course">English (exam language)</button><button class="${LANG==='fr'?'on':''}" data-cl="fr">French help</button></div>`)}
+  </div><div>
+  ${sec('👥 Leaderboard',`<p class="mut" style="margin-top:-4px">You appear as <b>${esc(pseudo(P))}</b>.</p><label class="small"><input type="checkbox" id="pf-board" ${squadOn()?'checked':''}> Show me on the S3 leaderboard</label>`)}
+  ${sec('🔐 Account',profEdit==='name'?`<label class="fl">First name<input id="pf-f" value="${esc(P.first)}"></label><label class="fl">Last name<input id="pf-l" value="${esc(P.last)}"></label><div id="pf-e" class="oerr"></div><div style="display:flex;gap:8px;justify-content:flex-end"><button class="btn" data-cancel="1">Cancel</button><button class="btn pri" id="pf-ns">Save</button></div>`
+    :profEdit==='pw'?`<label class="fl">New password<input id="pf-p1" type="password" autocomplete="new-password"></label><label class="fl">Confirm<input id="pf-p2" type="password" autocomplete="new-password"></label><div id="pf-e" class="oerr"></div><div style="display:flex;gap:8px;justify-content:flex-end"><button class="btn" data-cancel="1">Cancel</button><button class="btn pri" id="pf-ps">Save</button></div>`
+    :`<div style="display:grid;gap:10px"><button class="btn" id="pf-name">✏️ Change my name</button><button class="btn" id="pf-pw">🔑 Change my password</button><button class="btn" id="pf-out">↪ Log out</button></div>`)}
+  ${sec('Start over',`<p class="mut" style="margin-top:-4px">Erase all your progress (blocks, XP, flashcards, grades) and redo the study-time test. Your account and your own flashcards are kept.</p><button class="btn" id="pf-reset" style="color:var(--bad);border-color:var(--bad)">↺ Start over from zero</button>`)}
+  ${sec('🔒 Privacy',`<p class="mut" style="margin-top:-4px">What Grind stores about you, why, and how to delete it.</p><div style="display:grid;gap:10px"><button class="btn" data-privacy>Read the privacy notice</button><button class="btn" data-rep="privacy">✉️ Contact about my data</button>${profEdit==='del'?`<div class="tipnote small">This permanently deletes your account, your progress, your flashcards and your place on the leaderboard. Type <b>DELETE</b> to confirm.</div><input id="pf-del" autocomplete="off" style="font:inherit;padding:10px 12px;border-radius:12px;border:1px solid var(--bad);background:var(--bg);color:var(--ink)"><div id="pf-de" class="oerr"></div><div style="display:flex;gap:8px;justify-content:flex-end"><button class="btn" data-cancel="1">Cancel</button><button class="btn" id="pf-delgo" style="background:var(--bad);border-color:var(--bad);color:#fff">Delete my account</button></div>`:`<button class="btn" id="pf-delask" style="color:var(--bad);border-color:var(--bad)">🗑 Delete my account</button>`}</div>`)}
+  </div></div>`;
+  const $=id=>document.getElementById(id),b=(id,f)=>{const el=$(id);if(el)el.onclick=f;};
+  b('pf-time',()=>onboarding('edit'));b('pf-ics',()=>icsModal());
+  b('pf-name',()=>{profEdit='name';render();});b('pf-pw',()=>{profEdit='pw';render();});
+  app.querySelectorAll('[data-cancel]').forEach(x=>x.onclick=()=>{profEdit=null;render();});
+  b('pf-ns',()=>{const f=$('pf-f').value.trim(),l=$('pf-l').value.trim();if(!f||!l){$('pf-e').textContent=t('Enter your first and last name.');return;}setProf(Object.assign({},P,{first:f,last:l}));profEdit=null;render();pushBoard();toast(t('✓ Name updated'));});
+  b('pf-ps',async()=>{const p1=$('pf-p1').value,p2=$('pf-p2').value;if(p1.length<8){$('pf-e').textContent=t('At least 8 characters.');return;}if(p1!==p2){$('pf-e').textContent=t('The two passwords don\'t match.');return;}const {error}=await SB.auth.updateUser({password:p1});if(error){$('pf-e').textContent=error.message;return;}profEdit=null;render();toast(t('🔑 Password updated'));});
+  b('pf-delask',()=>{profEdit='del';render();setTimeout(()=>{const i=$('pf-del');if(i)i.focus();},30);});
+  b('pf-delgo',async()=>{const v=($('pf-del').value||'').trim().toUpperCase();if(v!=='DELETE'&&v!=='SUPPRIMER'){$('pf-de').textContent=t('Type DELETE to confirm.');return;}
+    $('pf-delgo').disabled=true;clearTimeout(_pushT);const {error}=await SB.rpc('delete_my_account');if(error){$('pf-delgo').disabled=false;$('pf-de').textContent=t('Couldn\'t delete your account. Try again.');return;}
+    try{Object.keys(localStorage).filter(k=>k.startsWith(SPX)).forEach(k=>localStorage.removeItem(k));}catch(e){}await SB.auth.signOut();location.replace(location.pathname+'#deleted');location.reload();});
+  b('pf-out',async()=>{clearTimeout(_pushT);await pushNow();await SB.auth.signOut();location.reload();});
+  const pb=$('pf-board');if(pb)pb.onchange=async e=>{store('squadOn',e.target.checked);await pushBoard();boardRows=null;toast(e.target.checked?t('You appear on the leaderboard'):t('You are hidden from the leaderboard'));};
+  app.querySelectorAll('[data-cl]').forEach(x=>x.onclick=()=>{LANG=x.dataset.cl==='fr'?'fr':'course';store('lang',LANG);render();});
+  b('pf-reset',e=>{const el=$('pf-reset');if(el.dataset.sure!=='1'){el.dataset.sure='1';el.textContent=t('Tap again to erase all your progress');el.style.background='var(--badbg)';return;}onboarding('new');});
+  bindNav(app);
+}
+
 /* ================= RENDER ================= */
 function render(){
   killCharts();
   const side=document.getElementById('side'); side.innerHTML=navHTML(false); bindNav(side);
   const mob=document.getElementById('mobnav'); mob.innerHTML=navHTML(true); bindNav(mob);
   const dr=document.getElementById('drawer'); dr.className=drawer?'drawer in':'drawer'; dr.innerHTML=drawer?`<button class="xbtn dclose" data-close="1" aria-label="Close">✕</button>`+navHTML(false):''; bindNav(dr); document.body.style.overflow=drawer?'hidden':'';
-  if(view==='review')viewReview(); else if(view==='cram'&&subj)viewCram(); else if(view==='calendar')viewCalendar(); else if(view==='subjects')viewSubjects(); else if(view==='progress')viewProgress(); else if(view==='grades')viewGrades(); else if(view==='exams')viewExams(); else if(view==='subject'&&subj)viewSubject(); else viewHome();
+  if(view==='admin')viewAdmin(); else if(view==='library')viewLibrary(); else if(view==='profile')viewProfile(); else if(view==='review')viewReview(); else if(view==='cram'&&subj)viewCram(); else if(view==='calendar')viewCalendar(); else if(view==='subjects')viewSubjects(); else if(view==='progress')viewProgress(); else if(view==='grades')viewGrades(); else if(view==='exams')viewExams(); else if(view==='subject'&&subj)viewSubject(); else viewHome();
 }
-(async function init(){const h=(location.hash||'').slice(1); if(h.startsWith('s-')&&EX[h.slice(2)]){view='subject';subj=h.slice(2);} else if(['calendar','progress','grades','exams','subjects','review'].includes(h)) view=h;
+(async function init(){const h=(location.hash||'').slice(1); if(h.startsWith('s-')&&EX[h.slice(2)]){view='subject';subj=h.slice(2);} else if(['calendar','progress','grades','exams','subjects','review','library','profile','admin'].includes(h)) view=h;
   render(); if(!prof()||!prof().start) onboarding('new'); else if(!store('askedGrades')) gradesModal();
   if(store('ics')){await Promise.all([loadICS(),loadSums()]);if(view==='home'||view==='calendar')render();}
-  pushBoard();})();
-window.addEventListener('hashchange',()=>{const h=(location.hash||'').slice(1);if(h.startsWith('s-')&&EX[h.slice(2)]){if(view!=='subject'||subj!==h.slice(2)){view='subject';subj=h.slice(2);stab='overview';render();}}else if(['calendar','progress','grades','exams','home','subjects','review'].includes(h)&&h!==view){view=h;render();}});
+  pushBoard();checkAdmin();})();
+window.addEventListener('hashchange',()=>{const h=(location.hash||'').slice(1);if(h.startsWith('s-')&&EX[h.slice(2)]){if(view!=='subject'||subj!==h.slice(2)){view='subject';subj=h.slice(2);stab='overview';render();}}else if(['calendar','progress','grades','exams','home','subjects','review','library','profile','admin'].includes(h)&&h!==view){view=h;render();}});
