@@ -1,7 +1,7 @@
 /* Grind · maths rendering: turns plain-text formulas (a/b, √(…), x², σ…) into KaTeX fractions and roots.
    Runs on the rendered page (text nodes only), so content files stay unchanged. */
 (function(G){
-const ATOMCH="A-Za-zÀ-ÿ0-9.,*'²³σμεαβλπΣΔ\\u0304\\u0302ˆ_ᵢⱼₖₙ₀-₉";
+const ATOMCH="A-Za-zÀ-ÖØ-öø-ÿ0-9.,*'²³σμεαβλπΣΔ\\u0304\\u0302ˆ_ᵢⱼₖₙ₀-₉";
 const NUM="\\d{1,3}(?:[ \\u00a0\\u202f,]\\d{3})+(?:[.,]\\d+)?";
 const reLeft=new RegExp("(?:"+NUM+"|√?["+ATOMCH+"]+)$");
 const reRight=new RegExp("^(?:"+NUM+"|["+ATOMCH+"]+)");
@@ -13,7 +13,9 @@ function leftAtom(s,end){ // s[..end) ; returns start index or -1
   let e=end;if(s[e-1]===' ')e--;
   if(s[e-1]===')'){const st=matchBack(s,e-1);if(st<0)return -1;let k=st;const m=s.slice(0,k).match(/(√|Σ|[A-Za-z]{1,4}[ᵢⱼ₀-₉]?)$/);if(m)k-=m[0].length;return k;}
   const m=s.slice(0,e).match(reLeft);if(!m)return -1;let k=e-m[0].length;
-  if(s[k-1]==='√')k--;return k;}
+  if(s[k-1]==='√')k--;
+  while(s[k-1]==='×'){const m2=s.slice(0,k-1).match(reLeft);if(!m2||/^\d/.test(m2[0])!==/^\d/.test(s.slice(k)))break;k=k-1-m2[0].length;}
+  return k;}
 function rightAtom(s,start){ // returns end index (exclusive) or -1
   let k=start;if(s[k]===' ')k++;
   if(s[k]==='√'){const r=rightAtom(s,k+1);return r;}
@@ -28,7 +30,7 @@ function esc(t){ // plain chunk (no / no √) → latex
   t=t.replace(/([A-Za-z])\u0304/g,'\\bar{$1}').replace(/([A-Za-z])[\u0302ˆ]/g,'\\hat{$1}').replace(/²([a-z])(?![a-z])/g,'^{2}_{$1}').replace(/²/g,'^{2}').replace(/([A-Za-z])\*/g,'$1^{*}').replace(/³/g,'^{3}');
   t=t.replace(/[σμεαβλπΣΔ]/g,c=>GREEK[c]).replace(/([ᵢⱼₖₙ₀-₉])/g,c=>'_{'+({'ᵢ':'i','ⱼ':'j','ₖ':'k','ₙ':'n'}[c]||String(c.charCodeAt(0)-0x2080))+'}');
   // words: ≥3 lowercase letters or mixed words → \text ; 2+ capitals → \mathrm
-  t=t.replace(/(\\[a-zA-Z]+|[A-Za-zÀ-ÿ]{2,})/g,w=>w[0]==='\\'?w:(/[a-zà-ÿ]{2,}/.test(w)||/^[A-Z][a-z]{2,}/.test(w)?'\\text{'+w+'}':/^[A-Z]{2,}$/.test(w)?'\\mathrm{'+w+'}':w));
+  t=t.replace(/(\\[a-zA-Z]+|[A-Za-zÀ-ÖØ-öø-ÿ]{2,})/g,w=>w[0]==='\\'?w:(/[a-zà-öø-ÿ]{2,}/.test(w)||/^[A-Z][a-z]{2,}/.test(w)?'\\text{'+w+'}':/^[A-Z]{2,}$/.test(w)?'\\mathrm{'+w+'}':w));
   return t.replace(/\\text\{([^}]*)\}(\s+)\\text\{/g,'\\text{$1$2');}
 function strip(t){t=t.trim();if(t[0]==='('&&matchFwd(t,0)===t.length-1)return t.slice(1,-1);return t;}
 function tex(expr){ // expression → latex (handles √ and / recursively)
@@ -43,7 +45,7 @@ function tex(expr){ // expression → latex (handles √ and / recursively)
     if(b[0]==='('){const e=matchFwd(b,0);inner=b.slice(1,e);rest=b.slice(e+1);} else {const m=b.match(reRight);inner=m?m[0]:'';rest=b.slice(inner.length);}
     return tex(a)+'\\sqrt{'+tex(inner)+'}'+tex(rest);}
   return esc(expr);}
-function wordy(x){x=x.replace(/^[a-zA-Z]['’]/,'');return /^[A-Za-zÀ-ÿ]{2,}$/.test(x)||/^[a-zà-ÿ]+$/.test(x)&&x.length>1;}
+function wordy(x){x=x.replace(/^[a-zA-Z]['’]/,'');return /^[A-Za-zÀ-ÖØ-öø-ÿ]{2,}$/.test(x)||/^[a-zà-öø-ÿ]+$/.test(x)&&x.length>1;}
 function mathy(x){x=x.trim();const y=x.replace(/^\(|\)$/g,'');return /[\d+\-−–×=*^√Σ²σμεΔ]/.test(y)||y.length<=2||/^[A-Z]{2,4}$/.test(y)||/^[A-Za-z]{1,2}\(/.test(y);}
 function okPair(a,b,ctxL,ctxR){if(/^\./.test(a.trim())||/^\./.test(b.trim()))return false;
   if(!mathy(a)&&!mathy(b))return false;
@@ -55,14 +57,14 @@ function okPair(a,b,ctxL,ctxR){if(/^\./.test(a.trim())||/^\./.test(b.trim()))ret
   if(/[CT]-\s*$/.test(ctxL)||/(Directive|Regulation|Règlement|Dir\.|Reg\.|n°|No\.)\s*(\(\w+\)\s*)?$/i.test(ctxL)||/^(19|20)\d\d$/.test(a.trim()))return false;
   if(/(sessions?|séances?|weeks?|semaines?|class(es)?|cours|chapters?|chapitres?|parts?|parties|topics?)\s$/i.test(ctxL))return false;
   {const A=a.trim(),B=b.trim();if(/^[A-Z]\d$/.test(A)&&/^[A-Z]\d$/.test(B))return false;
-   if(/^[a-zà-ÿ]{3,}$/.test(B)&&!/^\(/.test(A)&&/[A-Z]/.test(A))return false;
-   if(/^[a-zà-ÿ]{3,}$/.test(A)&&/^\d/.test(B)&&/^\s?%/.test(ctxR))return false;}
-  if(/^[A-Z][a-zà-ÿ]{2,}/.test(b.trim())&&!/^\(/.test(b.trim())&&!/=\s*$/.test(ctxL))return false;const k=(a+'/'+b).replace(/\s/g,'');if(SKIP.test(k))return false;
+   if(/^[a-zà-öø-ÿ]{3,}$/.test(B)&&!/^\(/.test(A)&&/[A-Z]/.test(A))return false;
+   if(/^[a-zà-öø-ÿ]{3,}$/.test(A)&&/^\d/.test(B)&&/^\s?%/.test(ctxR))return false;}
+  if(/^[A-Z][a-zà-öø-ÿ]{2,}/.test(b.trim())&&!/^\(/.test(b.trim())&&!/=\s*$/.test(ctxL))return false;const k=(a+'/'+b).replace(/\s/g,'');if(SKIP.test(k))return false;
   const A=a.trim(),B=b.trim();
-  if(/^[a-zà-ÿ]{2,}$/i.test(A)&&/^[a-zà-ÿ]{2,}$/i.test(B)&&!/^[A-Z]{2,}$/.test(A))return false; // and/or, read/write, Debit/credit
-  const alpha=x=>/^[A-Za-zÀ-ÿ]+$/.test(x);
+  if(/^[a-zà-öø-ÿ]{2,}$/i.test(A)&&/^[a-zà-öø-ÿ]{2,}$/i.test(B)&&!/^[A-Z]{2,}$/.test(A))return false; // and/or, read/write, Debit/credit
+  const alpha=x=>/^[A-Za-zÀ-ÖØ-öø-ÿ]+$/.test(x);
   if((wordy(A)&&alpha(B))||(wordy(B)&&alpha(A))){if(!(/=\s*$/.test(ctxL)||/^\s*=/.test(ctxR)||/[=]/.test(ctxL.slice(-4))))return false;}
-  if(UNIT.test(B)&&!/^\(/.test(A)&&!/^\d/.test(A)&&/^[A-Za-zà-ÿ€$]{2,}$/.test(A))return false; // units/h, €/h
+  if(UNIT.test(B)&&!/^\(/.test(A)&&!/^\d/.test(A)&&/^[A-Za-zà-öø-ÿ€$]{2,}$/.test(A))return false; // units/h, €/h
   if(UNIT.test(B)&&/^[\d.,  \u202f]+$/.test(A))return false; // 4/h written as rate
   if(/^\d{1,2}$/.test(A)&&/^\d{1,2}$/.test(B)&&+B<=31&&+A<=31&&+B>12)return false; // dates like 15/12 handled below
   return true;}
@@ -78,9 +80,9 @@ function convertText(s){ // returns array of {t} | {m}
       const ls=leftAtom(s,i),re=rightAtom(s,i+1);
       if(ls>=last&&re>0){const A=s.slice(ls,i),B=s.slice(i+1,re);
         if(s[re]==='/'||(s[re]===' '&&s[re+1]==='/')||s[ls-1]==='/'){let z=re;while(/[\/ \d.,]/.test(s[z]||''))z++;i=z;continue;}
-        const lw=/^[a-zà-ÿ]{2,}$/i.test(A.trim())&&/[a-zà-ÿ]{2,} $/i.test(s.slice(0,ls)),rw=/^[a-zà-ÿ]{2,}$/i.test(B.trim())&&/^ [a-zà-ÿ]{2,}/i.test(s.slice(re));
+        const lw=/^[a-zà-öø-ÿ]{2,}$/i.test(A.trim())&&/[a-zà-öø-ÿ]{2,} $/i.test(s.slice(0,ls)),rw=/^[a-zà-öø-ÿ]{2,}$/i.test(B.trim())&&/^ [a-zà-öø-ÿ]{2,}/i.test(s.slice(re));
         if(!lw&&!rw&&A.trim()!=='Σ'&&B.trim()!=='Σ'&&okPair(A,B,s.slice(Math.max(0,ls-15),ls),s.slice(re,re+15))){let st=ls;// extend left over a preceding √
-          out.push({t:s.slice(last,st)});out.push({m:tex(s.slice(st,re))});last=re;i=re;found=true;continue;}}}
+          out.push({t:s.slice(last,st)});out.push({m:tex(s.slice(st,re)).replace(/^\\frac/,'\\dfrac')});last=re;i=re;found=true;continue;}}}
     if(c==='√'){let e;if(s[i+1]==='('){e=matchFwd(s,i+1);e=e<0?-1:e+1;}else{const m=s.slice(i+1).match(reRight);e=m?i+1+m[0].length:-1;}
       if(e>0){let z=e;while(s[z]===' '&&s[z+1]==='/'){z=-1;break;}
         if(s[e]==='/'||(s[e]===' '&&s[e+1]==='/')){i++;continue;} // handled as fraction numerator
