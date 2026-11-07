@@ -104,17 +104,17 @@ function viewHome(){
   const qRight=Object.values(qm).reduce((a,o)=>a+Object.values(o).filter(v=>v===1).length,0);
   const cDone=chal[T]!=null;
   let html=`<div class="hero mb"><div class="blob b1"></div><div class="blob b2"></div><div style="position:relative;display:flex;justify-content:space-between;gap:16px;flex-wrap:wrap;align-items:flex-end">
-   <div><p>${fmt(T)} · Level ${lvl()} ${title()}</p><h1>${hi}${prof()?', '+prof().first.replace(/</g,''):''} 👋</h1><p>${todayN?`Today: <b>${todayDone}/${todayN}</b> blocks done${todayDone===todayN?' — day complete! 🎉':''}`:p&&p.off?'Evening off today 😌':(prof()&&T<prof().start)?`Your revision starts on <b>${fmt(prof().start)}</b>`:'Exam period — you got this 💪'}</p>
+   <div><p>${fmt(T)} · Level ${lvl()} ${title()}</p><h1>${hi}${prof()?', '+prof().first.replace(/</g,''):''} 👋</h1><p>${todayN?`Today: <b>${todayDone}/${todayN}</b> blocks done${todayDone===todayN?' — day complete! 🎉':''}`:p&&p.off?'Evening off today 😌':prof()&&prof().noplan?'Revise your own way today 📚':(prof()&&T<prof().start)?`Your revision starts on <b>${fmt(prof().start)}</b>`:'Exam period — you got this 💪'}</p>
    ${(()=>{const ex=EXAMS.find(e=>{const d=diff(T,e.date);return d>=0&&d<=1;});return ex?`<button class="cta" data-cram="${ex.id}" style="margin-right:8px">📄 J-1 cram sheet · ${ex.id}</button>`:'';})()}${nextB?`<button class="cta" data-start="${nextB.key}">▶ Start next session · ${nextB.s} — ${nextB.ch.split(' · ')[0]}</button>`:''}</div>
    <div style="text-align:right"><div class="big">${Math.max(0,diff(T,first.date))}</div><p>days before the first exam</p></div></div></div>
   <div class="g g4 mb">
-   <div class="kpi k1"><div class="v">${all.p}%</div><div class="l">of the plan completed</div><div class="kb"><i style="width:${all.p}%"></i></div></div>
+   ${prof()&&prof().noplan?`<div class="kpi k1"><div class="v">${hrs} h</div><div class="l">studied with Grind</div></div>`:`<div class="kpi k1"><div class="v">${all.p}%</div><div class="l">of the plan completed</div><div class="kb"><i style="width:${all.p}%"></i></div></div>`}
    <div class="kpi k2"><div class="v">🔥 ${st}</div><div class="l">day${st>1?'s':''} streak</div></div>
    <div class="kpi k3"><div class="v">⭐ ${xp}</div><div class="l">XP · level ${lvl()}</div><div class="kb"><i style="width:${Math.round((xp%LVL)/LVL*100)}%"></i></div></div>
    <div class="kpi k4"><div class="v">🧠 ${qRight}</div><div class="l">MCQs answered right · ${hrs}h studied</div></div>
   </div>
   <div class="g g2 mb" style="grid-template-columns:1.4fr 1fr">
-   <div class="card"><h2>📋 Today's plan${reviewCount()?`<span class="sp" style="flex:1"></span><button class="pill rvp" data-v="review">🔁 ${reviewCount()} to review</button>`:''}</h2>${!p?'<p class="mut">The plan covers 2 Nov – 16 Dec.</p>':(!p.off&&!p.blocs.length&&prof()&&T<prof().start)?`<p class="mut">Your revision starts on <b>${fmt(prof().start)}</b>. Until then, you can already explore the subjects, flashcards and MCQs.</p>`:p.off?`<p class="mut">Evening off. <button class="btn sm" id="unoff">Actually I'll study tonight</button></p>`:p.blocs.map(b=>taskHTML(b)).join('')+`<div style="margin-top:12px"><button class="btn sm" id="mkoff">I can't tonight</button> <span class="small mut">Blocks are redistributed over the next days.</span></div>`}</div>
+   <div class="card"><h2>📋 Today's plan${reviewCount()?`<span class="sp" style="flex:1"></span><button class="pill rvp" data-v="review">🔁 ${reviewCount()} to review</button>`:''}</h2>${prof()&&prof().noplan?`<p class="mut">You revise your own way: pick a subject, flashcards, MCQs or a mock exam whenever you want.</p><button class="btn pri" data-mkplan="1">📅 Create my revision plan</button><div class="small mut" style="margin-top:6px">Optional: a day-by-day plan until your exams.</div>`:!p?'<p class="mut">The plan covers 2 Nov – 16 Dec.</p>':(!p.off&&!p.blocs.length&&prof()&&T<prof().start)?`<p class="mut">Your revision starts on <b>${fmt(prof().start)}</b>. Until then, you can already explore the subjects, flashcards and MCQs.</p>`:p.off?`<p class="mut">Evening off. <button class="btn sm" id="unoff">Actually I'll study tonight</button></p>`:p.blocs.map(b=>taskHTML(b)).join('')+`<div style="margin-top:12px"><button class="btn sm" id="mkoff">I can't tonight</button> <span class="small mut">Blocks are redistributed over the next days.</span></div>`}</div>
    <div class="g">
     <div class="card chal ${cDone?'cdone':''}"><h2>⚔️ Daily challenge</h2><p class="small" style="margin:0 0 12px;opacity:.95">${cDone?`Done today: <b>${chal[T]}/10</b>. Come back tomorrow for a new one!`:'10 mixed questions from your next exams · 20 s each · combos = bonus XP'}</p><button class="btn ${cDone?'':'pri'} big" id="chalbtn">${cDone?'Play again':'Take the challenge · +100 XP'}</button></div>
    <div class="card"><h2>⏳ Next exams</h2>${next.map(e=>`<div class="grow" style="cursor:pointer" data-s="${e.id}"><span class="chip" style="--sc:${COL[e.id]}">${e.id}</span><div style="flex:1"><b>${e.name}</b><div class="small mut">${fmt(e.date)} · ${e.time}</div></div><div style="text-align:right">${reqBadge(e.id)}<div class="small mut">${countdown(e)}</div></div></div>`).join('')}<p class="small mut" style="margin:8px 0 0">Badge = grade needed at the final to get 10/20.</p></div>
@@ -122,7 +122,7 @@ function viewHome(){
   </div>
   <div class="mb">${classesCard()}</div>
   `;
-  app.innerHTML=html; bindTasks(app); bindNav(app); bindClasses(app);
+  app.innerHTML=html; bindTasks(app); bindNav(app); bindClasses(app); app.querySelectorAll('[data-mkplan]').forEach(b=>b.onclick=()=>onboarding('edit'));
   app.querySelectorAll('.cta[data-start]').forEach(b=>b.onclick=()=>startSession(b.dataset.start));
   app.querySelectorAll('[data-cram]').forEach(b=>b.onclick=()=>{subj=b.dataset.cram;view='cram';render();window.scrollTo(0,0);});
   document.getElementById('chalbtn').onclick=startChallenge;
@@ -142,13 +142,13 @@ function viewCalendar(){
     const cls=['cell'];if(ds===T)cls.push('today');if(ds===calSel)cls.push('sel');if(ex.length)cls.push('exam');if(p&&p.off)cls.push('off');if(!p&&!ex.length)cls.push('out');
     cells+=`<div class="${cls.join(' ')}" data-day="${ds}"><div class="d">${d}</div>${ds===T?'<span class="tday">Today</span>':''}${ex.map(e=>`<span class="ex">📝 ${e.id} ${e.time.split('–')[0]}</span>`).join('')}${p?p.blocs.map(b=>`<span class="b ${done[b.key]?'dn':''}" style="background:${COL[b.s]}">${b.s}</span>`).join(''):''}</div>`;}
   if(!calSel) calSel=T; const sel=calSel&&PLAN.find(x=>x.day===calSel);
-  app.innerHTML=`<div class="top"><h1>Revision calendar</h1><span class="sp"></span><button class="btn ${calMonth==='2026-11'?'pri':''}" data-m="2026-11">Nov</button><button class="btn ${calMonth==='2026-12'?'pri':''}" data-m="2026-12">Dec</button></div>
+  app.innerHTML=`<div class="top"><h1>Revision calendar</h1><span class="sp"></span><button class="btn ${calMonth==='2026-11'?'pri':''}" data-m="2026-11">Nov</button><button class="btn ${calMonth==='2026-12'?'pri':''}" data-m="2026-12">Dec</button></div>${prof()&&prof().noplan?'<div class="note mb">No revision plan: the calendar shows your exams only. <button class="btn sm pri" data-mkplan="1" style="margin-left:6px">📅 Create my revision plan</button></div>':''}
   <div class="g mb" style="grid-template-columns:minmax(0,2.2fr) minmax(0,1fr)">
    <div class="card"><div class="cal">${['Mon','Tue','Wed','Thu','Fri','Sat','Sun'].map(x=>`<div class="h">${x}</div>`).join('')}${cells}</div>
    <div class="small mut" style="margin-top:12px;display:flex;flex-wrap:wrap;gap:10px"><span>📝 exam (dark cell) · striped = evening off · <b style="color:var(--acc)">framed = selected day · violet “Today” = today</b></span></div></div>
    <div class="card" id="daypanel" style="border-top:4px solid var(--acc)">${sel?`<div class="small mut">Selected day</div><h2>${fmt(sel.day)}${sel.day===T?' <span class="pill">Today</span>':''}</h2>${sel.exams.map(e=>`<p><span class="pill bad">EXAM</span> ${e.name} · ${e.time}</p>`).join('')}${classesOn(sel.day).filter(x=>!x.cancel).length?`<p class="small mut">Classes: ${classesOn(sel.day).filter(x=>!x.cancel).map(x=>x.start+' '+(x.s?EX[x.s].name:x.name)).join(' · ')}</p>`:''}${sel.off?'<p class="mut">Evening off.</p>':sel.blocs.map(b=>taskHTML(b)).join('')}<button class="btn sm" id="tgoff" style="margin-top:10px">${sel.off?'Restore this evening':'Mark evening off'}</button>`:'<h2>Pick a day</h2><p class="mut">Click a day to see its blocks, tick them, or mark the evening off. The whole plan rebalances automatically.</p>'}</div>
   </div>`;
-  app.querySelectorAll('[data-m]').forEach(b=>b.onclick=()=>{calMonth=b.dataset.m;render();});
+  app.querySelectorAll('[data-m]').forEach(b=>b.onclick=()=>{calMonth=b.dataset.m;render();});app.querySelectorAll('[data-mkplan]').forEach(b=>b.onclick=()=>onboarding('edit'));
   app.querySelectorAll('[data-day]').forEach(c=>c.onclick=()=>{if(c.classList.contains('out'))return;calSel=c.dataset.day;render();if(window.innerWidth<=860){const pn=document.getElementById('daypanel');if(pn)pn.scrollIntoView({behavior:'smooth'});}});
   const tg=document.getElementById('tgoff'); if(tg) tg.onclick=()=>{if(off[calSel])delete off[calSel];else off[calSel]=1;store('off',off);PLAN=buildPlan();render();};
   bindTasks(app);
@@ -571,7 +571,7 @@ window.addEventListener('pagehide',()=>{if(_pushT){clearTimeout(_pushT);pushNow(
 function weekXP(){let n=0;for(let i=0;i<7;i++)n+=xpDay[addD(T,-i)]||0;return n;}
 function squadOn(){return _store0('squadOn')!==false;}
 let _lastBoard='';
-async function pushBoard(){if(!SB||!prof()||!prof().start)return;
+async function pushBoard(){if(!SB||!prof()||(!prof().start&&!prof().noplan))return;
   if(!squadOn()){await SB.from('leaderboard').delete().eq('user_id',_me);_lastBoard='';return;}
   const row={user_id:_me,pseudo:pseudo(prof()).slice(0,40),week_xp:Math.min(weekXP(),100000),xp:Math.min(xp,1000000),lvl:lvl(),streak:streak(),blocks:Object.values(done).filter(Boolean).length};
   const sig=JSON.stringify(row);if(sig===_lastBoard)return;
@@ -683,7 +683,7 @@ function setProf(p){window.__P=p;store('profile',p);}
 function blocsFor(day){
   const P=prof();const dow=s2d(day).getUTCDay();const examDay=EXAMS.some(e=>e.date===day);
   if(!P){ if(day===START)return 2; if(day>='2026-12-02')return examDay?3:(dow===0?6:5); if(dow===6)return 2; if(dow===0)return 5; return 3; }
-  if(day<P.start)return 0;
+  if(P.noplan||!P.start||day<P.start)return 0;
   if(day>='2026-12-02')return examDay?3:(dow===0?6:5);
   const m=dow===6?P.sat:dow===0?P.sun:P.wk;return Math.floor(m/25);
 }
@@ -713,7 +713,7 @@ function onboarding(mode){ /* mode: 'new' | 'edit' */
       document.getElementById('on1').onclick=go1;['of','ol'].forEach(id=>{const i=document.getElementById(id);i.oninput=()=>document.getElementById('oe').textContent='';i.onkeydown=e=>{if(e.key==='Enter')go1();};});
       setTimeout(()=>document.getElementById('of').focus(),50);return;}
     const c=capacity(f),ok=f.wk>=c.minWk&&c.minWk!==Infinity&&c.minWk<=300;
-    ov.innerHTML=`<div class="onb"><div class="onbbox wide">${mode==='new'?'<div class="onbstep">Step 2 of 2</div>':''}<h1>${mode==='new'?`Nice to meet you, ${f.first.replace(/</g,'')} 👋`:'Your study time'}</h1><p class="mut">A quick test to size your plan. Everything is counted in 25-minute focus sessions.</p>
+    ov.innerHTML=`<div class="onb"><div class="onbbox wide">${mode==='new'?'<div class="onbstep">Step 2 of 2</div>':''}<h1>${mode==='new'?`Nice to meet you, ${f.first.replace(/</g,'')} 👋`:old&&old.noplan?'Create my revision plan':'Your study time'}</h1><p class="mut">${mode==='new'?'Want a day-by-day revision plan? It\'s optional: you can also revise your own way and create a plan later. ':''}A quick test to size your plan. Everything is counted in 25-minute focus sessions.</p>
      <div class="q"><div class="ql">1. When do you want to start revising for your finals?</div><div class="chips">${chips.map(([d,l])=>`<button class="chipb ${f.start===d?'on':''}" data-d="${d}">${l}</button>`).join('')}<input type="date" id="osd" min="${t0}" max="${PREP_END}" value="${f.start}"></div></div>
      <div class="q"><div class="ql">2. How long can you study on a weekday evening (Mon–Fri)? <b id="vwk">${hm(f.wk)}</b></div><input type="range" id="owk" min="0" max="300" step="25" value="${f.wk}"></div>
      <div class="g g2" style="gap:14px"><div class="q"><div class="ql">3. On Saturdays? <b id="vsat">${hm(f.sat)}</b></div><input type="range" id="osat" min="0" max="300" step="25" value="${f.sat}"></div>
@@ -725,7 +725,7 @@ function onboarding(mode){ /* mode: 'new' | 'edit' */
       <div class="small">${c.minWk===Infinity||c.minWk>300?`Starting on ${fmt(f.start)} leaves too little time, even at 5 h a day. <b>Start earlier.</b>`:ok?`✓ Your plan covers all ${EXAMS.length} exams (${c.need} sessions ≈ ${Math.round(c.need*25/60)} h). Exam period (2–17 Dec) is planned automatically.`:`Below the minimum: to cover all ${EXAMS.length} exams starting ${fmt(f.start)}, you need at least <b>${hm(c.minWk)}</b> on weekday evenings with these weekends. Study more, or start earlier to lower it.`}</div>
       ${!ok&&c.minWk<=300?`<button class="btn sm" id="omin" style="margin-top:10px">Use the minimum (${hm(c.minWk)})</button>`:''}
      </div>
-     <div class="onbfoot">${mode==='new'?'<button class="btn" id="oback">← Back</button>':'<button class="btn" id="ocancel">Cancel</button>'}<button class="btn pri big" id="ogo" ${ok?'':'disabled'}>${mode==='new'?'Build my plan 🚀':'Save my plan'}</button></div></div></div>`;
+     ${mode==='new'?'<div style="text-align:center;margin-top:14px"><button class="btn" id="oskip">Skip: I\'ll revise my own way</button><div class="small mut" style="margin-top:4px">Full access to subjects, flashcards, MCQs and mock exams. You can create a plan anytime.</div></div>':''}<div class="onbfoot">${mode==='new'?'<button class="btn" id="oback">← Back</button>':'<button class="btn" id="ocancel">Cancel</button>'}<button class="btn pri big" id="ogo" ${ok?'':'disabled'}>${mode==='new'?'Build my plan 🚀':'Save my plan'}</button></div></div></div>`;
     const upd=k=>e=>{f[k]=+e.target.value;draw();setTimeout(()=>{const el=document.getElementById('o'+k);if(el)el.focus();},0);};
     document.getElementById('owk').onchange=upd('wk');document.getElementById('osat').onchange=upd('sat');document.getElementById('osun').onchange=upd('sun');
     ['wk','sat','sun'].forEach(k=>document.getElementById('o'+k).oninput=e=>{document.getElementById('v'+k).textContent=hm(+e.target.value);});
@@ -734,12 +734,13 @@ function onboarding(mode){ /* mode: 'new' | 'edit' */
     const mn=document.getElementById('omin');if(mn)mn.onclick=()=>{f.wk=c.minWk;draw();};
     const bk=document.getElementById('oback');if(bk)bk.onclick=()=>{st=1;draw();};
     const cc=document.getElementById('ocancel');if(cc)cc.onclick=close;
+    const sk=document.getElementById('oskip');if(sk)sk.onclick=()=>{wipeAll();setProf({first:f.first,last:f.last,noplan:true,at:Date.now()});PLAN=buildPlan();close();render();toast(t('✓ All set: revise your own way!'));if(!store('askedGrades'))setTimeout(gradesModal,600);pushBoard();};
     document.getElementById('ogo').onclick=()=>{if(!ok)return;
       if(mode==='new'){wipeAll();}
       setProf({first:f.first,last:f.last,start:f.start,wk:f.wk,sat:f.sat,sun:f.sun,at:Date.now()});
       PLAN=buildPlan();close();render();
       if(mode==='new'){confetti(180);toast(`🚀 Plan ready · ${PLAN.reduce((a,p)=>a+p.blocs.length,0)} sessions`);if(!store('askedGrades'))setTimeout(gradesModal,600);pushBoard();}
-      else toast('✓ Plan updated');};
+      else toast(old&&old.noplan?'🚀 Plan ready':'✓ Plan updated');};
   };
   draw();
 }
@@ -854,7 +855,7 @@ function viewProfile(){
   <div class="card mb profhead"><div class="avatar">${esc(ini)}</div><div style="flex:1;min-width:0"><h2 style="margin:0">${esc(P.first)} ${esc(P.last)}</h2><div class="small mut">${esc(window.ME_EMAIL||'')}</div><div class="small" style="margin-top:4px">Level ${lvl()} · ${title()} · ${xp} XP</div></div></div>
   <div class="g g2">
   <div>
-  ${sec('⏱ Study time',(P.start?`<p class="mut" style="margin-top:-4px">Revision from <b>${fmt(P.start)}</b> · weekdays <b>${hm(P.wk)}</b> · Sat <b>${hm(P.sat)}</b> · Sun <b>${hm(P.sun)}</b></p>`:'<p class="mut">Not set yet.</p>')+'<button class="btn pri" id="pf-time">Change my study time</button>')}
+  ${sec('⏱ Study time',(P.noplan?'<p class="mut" style="margin-top:-4px">You revise your own way: no revision plan.</p>':P.start?`<p class="mut" style="margin-top:-4px">Revision from <b>${fmt(P.start)}</b> · weekdays <b>${hm(P.wk)}</b> · Sat <b>${hm(P.sat)}</b> · Sun <b>${hm(P.sun)}</b></p>`:'<p class="mut">Not set yet.</p>')+(P.noplan?'<button class="btn pri" id="pf-time">📅 Create my revision plan</button>':'<button class="btn pri" id="pf-time">Change my study time</button> <button class="btn" id="pf-noplan">Stop following a plan</button>'))}
   ${sec('🗓 Outlook timetable',store('ics')?`<p class="mut" style="margin-top:-4px">Connected: your classes and class summaries appear on the dashboard.</p><button class="btn" id="pf-ics">Manage my timetable</button>`:`<p class="mut" style="margin-top:-4px">Not connected. Connect it to see your classes of the day and a summary of each class as soon as it ends.</p><button class="btn pri" id="pf-ics">Connect my timetable</button>`)}
   ${sec('🌍 Language',`<div class="small mut" style="margin:-4px 0 6px">Site language</div><div class="seg seg2" role="group" aria-label="Site language"><button class="${UI_LANG()==='en'?'on':''}" data-ui="en">English</button><button class="${UI_LANG()==='fr'?'on':''}" data-ui="fr">Français</button></div>
     <div class="small mut" style="margin:12px 0 6px">Course content (notes, flashcards, MCQs)</div><div class="seg seg2" role="group" aria-label="Course content language"><button class="${LANG!=='fr'?'on':''}" data-cl="course">English (exam language)</button><button class="${LANG==='fr'?'on':''}" data-cl="fr">French help</button></div>`)}
@@ -867,7 +868,7 @@ function viewProfile(){
   ${sec('🔒 Privacy',`<p class="mut" style="margin-top:-4px">What Grind stores about you, why, and how to delete it.</p><div style="display:grid;gap:10px"><button class="btn" data-privacy>Read the privacy notice</button><button class="btn" data-rep="privacy">✉️ Contact about my data</button>${profEdit==='del'?`<div class="tipnote small">This permanently deletes your account, your progress, your flashcards and your place on the leaderboard. Type <b>DELETE</b> to confirm.</div><input id="pf-del" autocomplete="off" style="font:inherit;padding:10px 12px;border-radius:12px;border:1px solid var(--bad);background:var(--bg);color:var(--ink)"><div id="pf-de" class="oerr"></div><div style="display:flex;gap:8px;justify-content:flex-end"><button class="btn" data-cancel="1">Cancel</button><button class="btn" id="pf-delgo" style="background:var(--bad);border-color:var(--bad);color:#fff">Delete my account</button></div>`:`<button class="btn" id="pf-delask" style="color:var(--bad);border-color:var(--bad)">🗑 Delete my account</button>`}</div>`)}
   </div></div>`;
   const $=id=>document.getElementById(id),b=(id,f)=>{const el=$(id);if(el)el.onclick=f;};
-  b('pf-time',()=>onboarding('edit'));b('pf-ics',()=>icsModal());
+  b('pf-time',()=>onboarding('edit'));b('pf-noplan',()=>{const P=prof();setProf({first:P.first,last:P.last,noplan:true,at:Date.now()});PLAN=buildPlan();render();toast(t('✓ Plan removed: your progress is kept.'));});b('pf-ics',()=>icsModal());
   b('pf-name',()=>{profEdit='name';render();});b('pf-pw',()=>{profEdit='pw';render();});
   app.querySelectorAll('[data-cancel]').forEach(x=>x.onclick=()=>{profEdit=null;render();});
   b('pf-ns',()=>{const f=$('pf-f').value.trim(),l=$('pf-l').value.trim();if(!f||!l){$('pf-e').textContent=t('Enter your first and last name.');return;}setProf(Object.assign({},P,{first:f,last:l}));profEdit=null;render();pushBoard();toast(t('✓ Name updated'));});
@@ -892,7 +893,7 @@ function render(){
   if(view==='admin')viewAdmin(); else if(view==='library')viewLibrary(); else if(view==='profile')viewProfile(); else if(view==='review')viewReview(); else if(view==='cram'&&subj)viewCram(); else if(view==='calendar')viewCalendar(); else if(view==='subjects')viewSubjects(); else if(view==='progress')viewProgress(); else if(view==='grades')viewGrades(); else if(view==='exams')viewExams(); else if(view==='subject'&&subj)viewSubject(); else viewHome();
 }
 (async function init(){const h=(location.hash||'').slice(1); if(h.startsWith('s-')&&EX[h.slice(2)]){view='subject';subj=h.slice(2);} else if(['calendar','progress','grades','exams','subjects','review','library','profile','admin'].includes(h)) view=h;
-  render(); if(!prof()||!prof().start) onboarding('new'); else if(!store('askedGrades')) gradesModal();
+  render(); if(!prof()||(!prof().start&&!prof().noplan)) onboarding('new'); else if(!store('askedGrades')) gradesModal();
   if(store('ics')){await Promise.all([loadICS(),loadSums()]);if(view==='home'||view==='calendar')render();}
   pushBoard();checkAdmin();})();
 window.addEventListener('hashchange',()=>{const h=(location.hash||'').slice(1);if(h.startsWith('s-')&&EX[h.slice(2)]){if(view!=='subject'||subj!==h.slice(2)){view='subject';subj=h.slice(2);stab='overview';render();}}else if(['calendar','progress','grades','exams','home','subjects','review','library','profile','admin'].includes(h)&&h!==view){view=h;render();}});
