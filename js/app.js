@@ -1,3 +1,4 @@
+const qOn=q=>q&&q[3]!=='H';const qLive=s=>(CONTENT[s].qcm||[]).filter(qOn).length;const qKnown=s=>{const qs=CONTENT[s].qcm||[];return Object.entries(qm[s]||{}).filter(([k,v])=>v===1&&qOn(qs[k])).length;};
 Object.keys(COL).forEach(k=>COL[k]="#7c5cff");
 /* ================= STATE ================= */
 let doneAt=store('doneAt')||{};           // key -> date checked
@@ -159,7 +160,7 @@ function viewProgress(){
   for(const p of PLAN){cp+=p.blocs.length;cd+=p.blocs.filter(b=>done[b.key]).length;planned.push(cp);achieved.push(p.day<=T?cd:null);}
   const exp=PLAN.filter(p=>p.day<=T).reduce((a,p)=>a+p.blocs.length,0); const ahead=cd-exp;
   const fcP=s=>{const c=(contentFor(s).cards||[]).length;const k=Object.values(fcm[s]||{}).filter(v=>v===1).length;return c?Math.round(k/c*100):0;};
-  const qP=s=>{const c=(CONTENT[s].qcm||[]).length;const k=Object.values(qm[s]||{}).filter(v=>v===1).length;return c?Math.round(k/c*100):0;};
+  const qP=s=>{const c=qLive(s);const k=qKnown(s);return c?Math.round(k/c*100):0;};
   const ids=EXAMS.filter(e=>e.id!=='GT').map(e=>e.id);
   // heatmap
   const cnt={};Object.entries(done).forEach(([k,v])=>{if(v){const d=doneAt[k]||k.split('|')[0];cnt[d]=(cnt[d]||0)+1;}});
@@ -230,7 +231,7 @@ function viewExams(){
 const STABS=[['overview','Overview'],['notes','Notes'],['flash','Flashcards'],['mcq','MCQ'],['exos','Exercises'],['exam','Exam mode'],['res','Resources']];
 function viewSubject(){
   const e=EX[subj], chs=CH[subj], c=contentFor(subj), pr=prog(subj), q=required(subj);
-  const fcN=(c.cards||[]).length, fcK=Object.values(fcm[subj]||{}).filter(v=>v===1).length, qN=(CONTENT[subj].qcm||[]).length, qK=Object.values(qm[subj]||{}).filter(v=>v===1).length;
+  const fcN=(c.cards||[]).length, fcK=Object.values(fcm[subj]||{}).filter(v=>v===1).length, qN=qLive(subj), qK=qKnown(subj);
   let h=`<div class="shero mb" style="--sc:${COL[subj]}"><div class="small" style="opacity:.85">${fmt(e.date)} · ${e.time} · ${countdown(e)}</div><h1>${e.name}</h1>
    <div class="row"><div class="stat"><div class="v">${pr.p}%</div><div class="l">plan done (${pr.d}/${pr.n})</div></div>
    <div class="stat"><div class="v">${fcN?Math.round(fcK/fcN*100)+'%':'—'}</div><div class="l">flashcards mastered</div></div>
@@ -286,7 +287,7 @@ function flashBind(cards){
 }
 function quizBind(qs){
   const s=subj, box=document.getElementById('qz'); qm[s]=qm[s]||{};
-  let order=qs.map((_,i)=>i).sort(()=>Math.random()-.5), i=0, score=0, answered=false, wrong=[];
+  let order=qs.map((_,i)=>i).filter(i=>qOn(qs[i])).sort(()=>Math.random()-.5), i=0, score=0, answered=false, wrong=[];
   const st=qstats[s]||{best:null};
   const start=mode=>{order=(mode==='wrong'?qs.map((_,k)=>k).filter(k=>qm[s][k]===0):qs.map((_,k)=>k)).sort(()=>Math.random()-.5);i=0;score=0;wrong=[];showQ();};
   const showQ=()=>{
@@ -335,7 +336,7 @@ const BADGES=[
  ['perfect','💯','Perfectionist','Score 100% on a full MCQ',()=>Object.values(qstats).some(x=>x.best===100)],
  ['chal','⚔️','Challenger','Finish a daily challenge',()=>Object.keys(chal).length>=1],
  ['chal5','👑','Champion','Finish 5 daily challenges',()=>Object.keys(chal).length>=5],
- ['master','🌟','Subject master','All flashcards + 80% MCQs in one subject',()=>EXAMS.some(e=>{const c=(contentFor(e.id).cards||[]).length,q=(CONTENT[e.id].qcm||[]).length;if(!c||!q)return false;const fk=Object.values(fcm[e.id]||{}).filter(v=>v===1).length,qk=Object.values(qm[e.id]||{}).filter(v=>v===1).length;return fk>=c&&qk/q>=.8;})],
+ ['master','🌟','Subject master','All flashcards + 80% MCQs in one subject',()=>EXAMS.some(e=>{const c=(contentFor(e.id).cards||[]).length,q=qLive(e.id);if(!c||!q)return false;const fk=Object.values(fcm[e.id]||{}).filter(v=>v===1).length,qk=qKnown(e.id);return fk>=c&&qk/q>=.8;})],
  ['lvl5','🚀','Rocket','Reach level 5',()=>lvl()>=5],
 ];
 function checkBadges(){BADGES.forEach(([id,ic,n])=>{const b=BADGES.find(x=>x[0]===id);if(!badges[id]&&b[4]()){badges[id]=T;store('badges',badges);setTimeout(()=>{toast(`${ic} Badge unlocked: <b>${n}</b>`,'');confetti(90);},700);}});}
@@ -344,7 +345,7 @@ function confetti(n){const c=document.createElement('canvas');c.className='confe
   let f=0;(function tick(){x.clearRect(0,0,c.width,c.height);ps.forEach(p=>{p.vy+=.35;p.x+=p.vx;p.y+=p.vy;p.r+=p.vr;x.save();x.translate(p.x,p.y);x.rotate(p.r);x.fillStyle=p.c;x.fillRect(-p.s/2,-p.s/2,p.s,p.s*.6);x.restore();});if(++f<130)requestAnimationFrame(tick);else c.remove();})();}
 
 /* ================= QUIZ ENGINE (sessions & challenge) ================= */
-function pickQ(s,n){const qs=CONTENT[s].qcm||[];const m=qm[s]||{};const idx=qs.map((_,i)=>i);const pri=i=>m[i]===0?0:m[i]===undefined?1:2;return idx.sort((a,b)=>pri(a)-pri(b)||Math.random()-.5).slice(0,n).map(k=>({s,k}));}
+function pickQ(s,n){const qs=CONTENT[s].qcm||[];const m=qm[s]||{};const idx=qs.map((_,i)=>i).filter(i=>qOn(qs[i]));const pri=i=>m[i]===0?0:m[i]===undefined?1:2;return idx.sort((a,b)=>pri(a)-pri(b)||Math.random()-.5).slice(0,n).map(k=>({s,k}));}
 function runQuiz(box,items,opts){
   let i=0,score=0,combo=0,best=0,tm=null,left=0;
   const next=()=>{clearInterval(tm); if(i>=items.length){opts.onEnd&&opts.onEnd(score,items.length,best);return;}
@@ -411,7 +412,7 @@ let srs=store('srs')||{}, mocks=store('mocks')||{}, xpDay=store('xpDay')||{};
 const SRS_STEPS=[1,3,7,14,30];
 function srsMark(s,i,v){srs[s]=srs[s]||{};const o=srs[s][i]||{n:-1};const n=v===1?Math.min(o.n+1,SRS_STEPS.length-1):0;srs[s][i]={n,due:addD(T,v===1?SRS_STEPS[n]:1)};store('srs',srs);}
 function dueCards(sOnly){const out=[];Object.entries(srs).forEach(([s,o])=>{if(sOnly&&s!==sOnly)return;const c=contentFor(s).cards||[];Object.entries(o).forEach(([i,x])=>{if(x.due<=T&&c[i])out.push({s,i:+i});});});return out;}
-function missedQs(sOnly){const out=[];Object.entries(qm).forEach(([s,o])=>{if(sOnly&&s!==sOnly)return;if(!CONTENT[s]||!CONTENT[s].qcm)return;Object.entries(o).forEach(([k,v])=>{if(v===0&&CONTENT[s].qcm[k])out.push({s,k:+k});});});return out;}
+function missedQs(sOnly){const out=[];Object.entries(qm).forEach(([s,o])=>{if(sOnly&&s!==sOnly)return;if(!CONTENT[s]||!CONTENT[s].qcm)return;Object.entries(o).forEach(([k,v])=>{if(v===0&&qOn(CONTENT[s].qcm[k]))out.push({s,k:+k});});});return out;}
 function missedCards(sOnly){const out=[];Object.entries(fcm).forEach(([s,o])=>{if(sOnly&&s!==sOnly)return;const c=contentFor(s).cards||[];Object.entries(o).forEach(([i,v])=>{if(v===0&&c[i])out.push({s,i:+i});});});return out;}
 function reviewCount(){return dueCards().length+missedQs().length;}
 
@@ -470,7 +471,7 @@ function viewReview(){
 /* ================= V4 · EXAM MODE (mock + J-1) ================= */
 function examMinutes(s){const f=(contentFor(s).format||'').replace(/<[^>]+>/g,'');const m=f.match(/(\d)\s*h\s*(\d{2})?/);if(m)return +m[1]*60+(+(m[2]||0));const n=f.match(/(\d{2,3})\s*min/);return n?+n[1]:60;}
 function examTab(){
-  const s=subj,c=contentFor(s),qN=(CONTENT[s].qcm||[]).length,ex=c.exos||[],ms=mocks[s]||[],q=required(s),last=ms[ms.length-1];
+  const s=subj,c=contentFor(s),qN=qLive(s),ex=c.exos||[],ms=mocks[s]||[],q=required(s),last=ms[ms.length-1];
   const tip=s==='LV'?'':'';
   return `<div class="g g2 mb">
    <div class="card"><h2>📝 Mock exam</h2><p class="small mut" style="margin-top:-6px">Real conditions: ${examMinutes(s)} min timer, no hints until the end, then a grade out of 20.</p>
@@ -482,7 +483,7 @@ function examTab(){
   ${ms.length>1?`<div class="card"><h2>Your mock grades</h2>${ms.slice(-6).map(x=>`<div class="grow"><span class="small mut" style="width:90px">${fmt(x.d)}</span><div style="flex:1"><div class="bar"><i style="width:${x.g*5}%"></i></div></div><b>${x.g.toFixed(1)}</b></div>`).join('')}</div>`:''}`;
 }
 function startMock(s){
-  const c=contentFor(s),qs=CONTENT[s].qcm||[],items=qs.map((_,k)=>k).sort(()=>Math.random()-.5).slice(0,20),exo=(c.exos||[]).length?c.exos[Math.floor(Math.random()*c.exos.length)]:null;
+  const c=contentFor(s),qs=CONTENT[s].qcm||[],items=qs.map((_,k)=>k).filter(k=>qOn(qs[k])).sort(()=>Math.random()-.5).slice(0,20),exo=(c.exos||[]).length?c.exos[Math.floor(Math.random()*c.exos.length)]:null;
   let sec=examMinutes(s)*60,tm=null;const ans={};const m=document.getElementById('modal');
   const close=()=>{clearInterval(tm);m.innerHTML='';render();};
   m.innerHTML=`<div class="modal"><div class="box sess" style="max-width:820px"><div class="shead"><div><div class="small" style="opacity:.85">Mock exam · ${items.length} MCQs${exo?' + 1 exercise':''}</div><b>${EX[s].name}</b></div><div class="sp"></div><div class="stimer" id="mt"></div><button class="xbtn" id="mx">✕</button></div>
