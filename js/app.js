@@ -20,7 +20,7 @@ const T=todayStr();
 /* ================= HELPERS ================= */
 const subjBlocks=s=>PLAN.flatMap(p=>p.blocs).filter(b=>b.s===s);
 function prog(s){const a=s?subjBlocks(s):PLAN.flatMap(p=>p.blocs);const d=a.filter(b=>done[b.key]).length;return {d,n:a.length,p:a.length?Math.round(d/a.length*100):0};}
-function getW(s){return GRADING[s].map((c,i)=>weights[s]&&weights[s][i]!=null?+weights[s][i]:c.w);}
+function getW(s){if(s==='TL'&&weights.TL&&weights.TL.join()==='10,10,30,50'){delete weights.TL;store('weights',weights);}return GRADING[s].map((c,i)=>weights[s]&&weights[s][i]!=null?+weights[s][i]:c.w);}
 function required(s){
   const comps=GRADING[s], w=getW(s), g=grades[s]||{}; let acc=0, fw=0, assumed=false;
   comps.forEach((c,i)=>{ if(c.fin){fw+=w[i];return;} const v=g[i]; if(v===''||v==null||isNaN(+v)){assumed=true;} else acc+=w[i]*Math.max(0,Math.min(20,+v)); });

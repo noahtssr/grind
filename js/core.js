@@ -196,5 +196,5 @@ const GRADING={
  MM:[{n:'Participation',w:10},{n:'Continuous assessment (capstone)',w:40},{n:'Final exam',w:50,fin:1}],
  COST:[{n:'Mid-term MCQ',w:30,mid:1},{n:'Final exam',w:70,fin:1}],
  OM:[{n:'Mid-term exam',w:20,mid:1},{n:'Continuous assessment',w:10},{n:'Tutorial (beer game)',w:10},{n:'Final exam',w:60,fin:1}],
- TL:[{n:'Participation',w:10},{n:'Research / capstone',w:10},{n:'Mid-term exam',w:30,mid:1,uc:1},{n:'Final exam (MCQ + case)',w:50,fin:1}],
+ TL:[{n:'Participation',w:10},{n:'Case study',w:25},{n:'Multiple choice questions',w:25},{n:'End of term exam (1 h)',w:40,fin:1}],
 };
