@@ -808,7 +808,7 @@ async function admActivity(){
   const act7=acc.filter(r=>(+r.xp7||0)>0).length,actT=au[au.length-1],T=A.totals||{};
   const subs=Object.keys(A.mcq||{}).sort((x,y)=>(A.mcq[y].n)-(A.mcq[x].n));
   const kp=(v,l)=>`<div class="kpi"><div class="v">${v}</div><div class="l">${l}</div></div>`;
-  L.innerHTML=`<div class="g g4 mb">${kp(T.users||0,t('accounts'))+kp(act7,t('active over 7 days'))+kp(actT,t('active today'))+kp(T.suspended||0,t('suspended'))}</div>
+  L.innerHTML=`<div class="g g3 mb">${kp(act7,t('revised (earned XP) in the last 7 days'))+kp(actT,t('revised today'))+kp(T.suspended||0,t('suspended accounts'))}</div>
   <h3 style="margin:6px 0">${t('Sign-ups (last 30 days)')}</h3><div style="height:220px"><canvas id="ac1"></canvas></div>
   <h3 style="margin:16px 0 6px">${t('Active students per day')}</h3><div style="height:220px"><canvas id="ac2"></canvas></div>
   <h3 style="margin:16px 0 6px">${t('MCQs answered per subject')}</h3><div style="height:${Math.max(160,subs.length*34)}px"><canvas id="ac3"></canvas></div>
