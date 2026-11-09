@@ -578,17 +578,20 @@ async function pushBoard(){if(!SB||!prof()||(!prof().start&&!prof().noplan))retu
   const {error}=await SB.from('leaderboard').upsert(Object.assign({updated_at:new Date().toISOString()},row));if(!error)_lastBoard=sig;}
 function paintSync(){document.querySelectorAll('.syncdot').forEach(el=>{el.className='syncdot '+syncState;el.title=syncState==='synced'?'Progress saved to your account':'Not saved yet: check your connection';});}
 let boardRows=null;
-function squadCard(){return `<div class="card mb" id="squad"><h2>👥 S3 leaderboard <span class="sp" style="flex:1"></span><label class="small" style="font-weight:400"><input type="checkbox" id="sqon" ${squadOn()?'checked':''}> show me</label></h2><div id="sqb"><p class="small mut">Loading…</p></div><p class="small mut" style="margin:10px 0 0">Ranked by XP earned over the last 7 days. Only nicknames are shown (first name + initial).</p></div>`;}
+function squadCard(){return `<div class="card mb" id="squad"><h2>👥 S3 leaderboard <span class="sp" style="flex:1"></span><label class="small" style="font-weight:400"><input type="checkbox" id="sqon" ${squadOn()?'checked':''}> show me</label></h2><div id="sqb"><p class="small mut">Loading…</p></div><p class="small mut" style="margin:10px 0 0">Top 5 by XP earned over the last 7 days. Only nicknames are shown (first name + initial).</p></div>`;}
 async function squadBind(){
   const sq=document.getElementById('sqon');if(sq)sq.onchange=async e=>{store('squadOn',e.target.checked);await pushBoard();boardRows=null;squadBind();};
   const box=document.getElementById('sqb');if(!box)return;
   const paint=rows=>{const b=document.getElementById('sqb');if(!b)return;const wk=Date.now()-7*864e5;
     rows=rows.map(r=>Object.assign({},r,{wk:new Date(r.updated_at).getTime()>=wk?r.week_xp:0})).sort((a,z)=>z.wk-a.wk||z.xp-a.xp);
     if(!rows.length){b.innerHTML='<p class="small mut">Nobody yet: be the first!</p>';return;}
-    const meI=rows.findIndex(r=>r.user_id===_me);const top=rows.slice(0,15);
+    const meI=rows.findIndex(r=>r.user_id===_me);const TOP=5;const top=rows.slice(0,TOP);
     const line=(r,i)=>`<div class="grow ${r.user_id===_me?'meRow':''}"><b style="width:28px;color:var(--acc)">${['🥇','🥈','🥉'][i]||i+1}</b><div style="flex:1;min-width:0"><b class="nm"></b>${r.user_id===_me?' <span class="pill">you</span>':''}<div class="small mut">Level ${r.lvl||1} · 🔥 ${r.streak||0} · ${r.blocks||0} blocks</div></div><b>${r.wk} XP</b></div>`;
-    b.innerHTML=top.map(line).join('')+(meI>=15?`<div class="small mut" style="text-align:center;margin:4px 0">···</div>`+line(rows[meI],meI):'')+`<p class="small mut" style="margin:8px 0 0">${rows.length} student${rows.length>1?'s':''} on Grind</p>`;
-    const shown=top.concat(meI>=15?[rows[meI]]:[]);b.querySelectorAll('.nm').forEach((el,i)=>{el.textContent=shown[i].pseudo;});};
+    const gap=meI>0?rows[meI-1].wk-rows[meI].wk+1:0;
+    const meBox=meI<0?`<div class="note" style="margin-top:10px">${squadOn()?t('Earn XP this week to enter the ranking!'):t('You are hidden: tick “show me” to get your rank.')}</div>`
+      :`<div class="note" style="margin-top:10px"><b>${t('Your rank')}: ${meI===0?'🥇 #1':'#'+(meI+1)}</b> ${t('out of')} ${rows.length}${meI>0?` · <span class="small">${t('+{n} XP to pass #{k}').replace('{n}',gap).replace('{k}',meI)}</span>`:` · <span class="small">${t('you lead the week!')}</span>`}</div>`;
+    b.innerHTML=top.map(line).join('')+(meI>=TOP?`<div class="small mut" style="text-align:center;margin:4px 0">···</div>`+line(rows[meI],meI):'')+meBox;
+    const shown=top.concat(meI>=TOP?[rows[meI]]:[]);b.querySelectorAll('.nm').forEach((el,i)=>{el.textContent=shown[i].pseudo;});};
   if(boardRows){paint(boardRows);return;}
   if(!SB){box.innerHTML='<p class="small mut">Leaderboard unavailable.</p>';return;}
   await pushBoard();
