@@ -849,8 +849,15 @@ async function admUsers(){
 }
 async function viewAdmin(){
   if(!ADMIN){go('home');return;}
-  app.innerHTML=`<div class="top"><h1>🛠 Admin</h1><span class="sp"></span><button class="btn sm" id="admr">Refresh</button></div><div id="admk" class="g g4 mb"></div><div class="card"><div class="libtabs" style="margin-bottom:8px"><button class="chipb ${admTab==='users'?'on':''}" data-at="users">Accounts</button><button class="chipb ${admTab==='stats'?'on':''}" data-at="stats">📊 Activity</button><button class="chipb ${admTab==='open'?'on':''}" data-at="open">To fix</button><button class="chipb ${admTab==='done'?'on':''}" data-at="done">Fixed</button></div><div id="adml"><p class="mut">Loading…</p></div></div>`;
+  app.innerHTML=`<div class="top"><h1>🛠 Admin</h1><span class="sp"></span><button class="btn sm" id="admbk" title="Students' progress, leaderboard, reports and account list (no passwords)">💾 Download a backup</button><button class="btn sm" id="admr">Refresh</button></div><div id="admk" class="g g4 mb"></div><div class="card"><div class="libtabs" style="margin-bottom:8px"><button class="chipb ${admTab==='users'?'on':''}" data-at="users">Accounts</button><button class="chipb ${admTab==='stats'?'on':''}" data-at="stats">📊 Activity</button><button class="chipb ${admTab==='open'?'on':''}" data-at="open">To fix</button><button class="chipb ${admTab==='done'?'on':''}" data-at="done">Fixed</button></div><div id="adml"><p class="mut">Loading…</p></div></div>`;
   document.getElementById('admr').onclick=()=>viewAdmin();
+  document.getElementById('admbk').onclick=async e=>{const b=e.currentTarget;b.disabled=true;const old=b.textContent;b.textContent=t('Preparing…');
+    try{const {data,error}=await SB.rpc('grind_backup');if(error||!data)throw error||new Error('empty');
+      const d=new Date(),p=n=>String(n).padStart(2,'0'),name=`grind-backup-${d.getFullYear()}-${p(d.getMonth()+1)}-${p(d.getDate())}_${p(d.getHours())}h${p(d.getMinutes())}.json`;
+      const url=URL.createObjectURL(new Blob([JSON.stringify(data,null,1)],{type:'application/json'}));const a=document.createElement('a');a.href=url;a.download=name;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),4000);
+      store('lastBackup',Date.now());toast(t('Backup downloaded')+` · ${(data.accounts||[]).length} `+t('accounts'));}
+    catch(x){toast(t('Backup failed')+': '+((x&&x.message)||x));}
+    b.disabled=false;b.textContent=old;};
   app.querySelectorAll('[data-at]').forEach(b=>b.onclick=()=>{admTab=b.dataset.at;viewAdmin();});
   if(admTab==='users'){const st=await SB.rpc('grind_stats');admKpi(st.data||{});return admUsers();}
   if(admTab==='stats'){const st=await SB.rpc('grind_stats');admKpi(st.data||{});return admActivity();}
