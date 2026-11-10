@@ -247,7 +247,7 @@ function viewSubject(){
   }
   if(stab==='notes'){
     h+=`<div class="card"><div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center"><select id="chsel">${chs.map((x,i)=>`<option value="${i}" ${i===curCh?'selected':''}>${x.t}</option>`).join('')}</select><span class="sp"></span><button class="btn sm" id="pv" ${curCh===0?'disabled':''}>← Prev</button><button class="btn sm" id="nx" ${curCh===chs.length-1?'disabled':''}>Next →</button></div>`;
-    const f=c.fiches&&c.fiches[curCh]; h+=f?`<div style="margin-top:14px" data-notr>${f}</div><div style="text-align:right;margin-top:8px"><a href="#" class="replink" data-rep="n|${subj}|${curCh}">⚑ Report an error</a></div>`:`<p class="mut" style="margin-top:14px">No notes for this chapter yet — use the professor's material below.</p>`;
+    const f=c.fiches&&c.fiches[curCh]; h+=f?`<div style="margin-top:14px" data-notr class="fx" data-fs="${subj}" data-fc="${curCh}">${f}</div><div style="text-align:right;margin-top:8px"><a href="#" class="replink" data-rep="n|${subj}|${curCh}">⚑ Report an error</a></div>`:`<p class="mut" style="margin-top:14px">No notes for this chapter yet — use the professor's material below.</p>`;
     const res=chs[curCh].res; if(res.length) h+=`<h3>Professor's material</h3><ul>${res.map(r=>`<li><a href="${r[1]}" target="_blank" rel="noopener">${r[0]}</a></li>`).join('')}</ul>`;
     h+=`</div>`;
   }
@@ -378,7 +378,7 @@ function startSession(key){
   st=setInterval(()=>{if(sec>0)sec--;tick();},1000);
   const close=()=>{clearInterval(st);m.innerHTML='';render();};
   const draw=()=>{
-    if(step===0){const f=c.fiches&&c.fiches[b.chi];m.innerHTML=shell(`${f?`<div class="notes">${f}</div>`:'<p class="mut">No notes for this chapter: open the professor\'s slides from the Resources tab.</p>'}<div class="sfoot"><button class="btn pri big" id="sn">I've read it → Flashcards</button></div>`);
+    if(step===0){const f=c.fiches&&c.fiches[b.chi];m.innerHTML=shell(`${f?`<div class="notes fx" data-notr data-fs="${s}" data-fc="${b.chi}">${f}</div>`:'<p class="mut">No notes for this chapter: open the professor\'s slides from the Resources tab.</p>'}<div class="sfoot"><button class="btn pri big" id="sn">I've read it → Flashcards</button></div>`);
       document.getElementById('sn').onclick=()=>{addXP(10,'· notes read');step=1;draw();};}
     else if(step===1){let i=0,back=false;m.innerHTML=shell(`<div class="small mut" id="fci"></div><div class="flash big" id="sfc"></div><div class="sfoot"><button class="btn bad2" id="fno">✗ Didn't know</button><button class="btn ok2" id="fyes">✓ Knew it</button></div>`);
       const show=()=>{if(i>=cards.length){step=2;draw();return;}const cd=c.cards[cards[i]];const el=document.getElementById('sfc');el.textContent=back?cd[1]:cd[0];el.classList.toggle('back',back);document.getElementById('fci').textContent=`Card ${i+1}/${cards.length} · tap the card to flip it`;};
@@ -555,7 +555,7 @@ function guideExo(s,i){
 }
 
 /* ================= SYNC + LEADERBOARD (Supabase) ================= */
-const SYNC_KEYS=['myCards','profile','done','doneAt','off','qstats','fcm','qm','grades','weights','assume','lang','xp','badges','chal','xpSeen','wkOpen','srs','mocks','xpDay','askedGrades','squadOn','ics'];
+const SYNC_KEYS=['ficheRead','myCards','profile','done','doneAt','off','qstats','fcm','qm','grades','weights','assume','lang','xp','badges','chal','xpSeen','wkOpen','srs','mocks','xpDay','askedGrades','squadOn','ics'];
 const SB=window.SB, _me=window.ME_ID, SPX=window.__SP;
 let _pushT=null,syncState='synced',_pushing=false,_again=false;
 const _store0=store;
@@ -872,7 +872,7 @@ function viewLibrary(){
   <div class="card mb"><div style="display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;align-items:flex-start"><div><h2 style="margin:0">${e.name}</h2><div class="small mut">${fmt(e.date)} · ${e.time} · ${countdown(e)}</div></div><button class="btn sm" data-practise="${s}">Practise this subject →</button></div>
    ${c.format?`<details class="libfmt"><summary>Exam format</summary><div class="note" style="margin-top:8px">${c.format}</div></details>`:''}</div>
   ${chs.map((x,i)=>{const f=c.fiches&&c.fiches[i],k=s+'|'+i;return `<details class="libch" data-k="${k}" ${libOpen[k]?'open':''}><summary><span class="libn">${i+1}</span><span class="libt">${x.t}</span><span class="libtags">${f?'<span class="pill">Notes</span>':''}${x.res.length?`<span class="pill">📎 ${x.res.length}</span>`:''}</span></summary>
-    <div class="libb">${f?`<div data-notr class="libnotes">${f}</div><div style="text-align:right;margin-top:6px"><a href="#" class="replink" data-rep="n|${s}|${i}">⚑ Report an error</a></div>`:'<p class="mut">No notes for this chapter yet: open the professor\'s material below.</p>'}
+    <div class="libb">${f?`<div data-notr class="libnotes fx" data-fs="${s}" data-fc="${i}">${f}</div><div style="text-align:right;margin-top:6px"><a href="#" class="replink" data-rep="n|${s}|${i}">⚑ Report an error</a></div>`:'<p class="mut">No notes for this chapter yet: open the professor\'s material below.</p>'}
     ${x.res.length?`<div class="libres"><b>📎 Professor's material</b><div class="small mut">On MyCourses (log in to open it).</div><ul>${x.res.map(r=>`<li><a href="${r[1]}" target="_blank" rel="noopener">${r[0]}</a></li>`).join('')}</ul></div>`:''}</div></details>`;}).join('')||'<div class="card mut">No chapters for this subject yet.</div>'}`;
   app.querySelectorAll('[data-lib]').forEach(b=>b.onclick=()=>{libS=b.dataset.lib;render();window.scrollTo(0,0);});
   app.querySelectorAll('details.libch').forEach(d=>d.ontoggle=()=>{libOpen[d.dataset.k]=d.open;});
