@@ -113,10 +113,20 @@ function openPrivacy(){let ov=document.getElementById('privov');if(ov)ov.remove(
 window.openPrivacy=openPrivacy;
 document.addEventListener('click',e=>{const a=e.target.closest&&e.target.closest('[data-privacy]');if(!a)return;e.preventDefault();openPrivacy();});
 i18nInit();
+async function stillAllowed(){try{const r=await sb.auth.getUser();const bu=r.data&&r.data.user&&r.data.user.banned_until;
+  if(r.error&&(r.error.status===401||r.error.status===403||/session|ban|not found/i.test(r.error.message||'')))return false;if(bu&&new Date(bu)>new Date())return false;}catch(x){}return true;}
+setInterval(async()=>{if(booted&&!(await stillAllowed()))location.reload();},5*60*1000);
+document.addEventListener('visibilitychange',async()=>{if(document.visibilityState==='visible'&&booted&&!(await stillAllowed()))location.reload();});
 sb.auth.onAuthStateChange((ev,session)=>{if(ev==='PASSWORD_RECOVERY'){mode='recovery';msg='';draw();}});
 (async()=>{mode='loading';msg='Loading…';draw();
   const {data}=await sb.auth.getSession();
   if(recovering){if(mode!=='recovery'){mode='recovery';draw();}return;}
-  if(data&&data.session){boot(data.session);return;}
+  if(data&&data.session){
+    // server check: a suspended account or a revoked session must not reuse the token stored in the browser
+    try{const r=await sb.auth.getUser();const bu=r.data&&r.data.user&&r.data.user.banned_until;
+      if((r.error&&(r.error.status===401||r.error.status===403||/session|ban|not found|jwt/i.test(r.error.message||'')))||(bu&&new Date(bu)>new Date())){
+        try{await sb.auth.signOut({scope:'local'});}catch(x){}Object.keys(localStorage).filter(k=>/^sb-.*-auth-token/.test(k)).forEach(k=>localStorage.removeItem(k));
+        mode='login';msg=t('Your access to Grind has been suspended or your session has ended. Log in again; if your account is suspended, contact grind.app.ieseg@gmail.com.');draw();return;}}catch(x){}
+    boot(data.session);return;}
   mode='login';if(/deleted/.test(location.hash)){msg=t('Your account and all your data have been deleted.');history.replaceState(null,'',location.pathname);draw();return;}msg=linkError?decodeURIComponent(linkError.replace(/\+/g,' ')):'';if(/expired|invalid/i.test(msg))msg=t('This link has already been used or has expired. Try logging in: your account is probably already active. Otherwise, ask for a new link.');draw();})();
 })();
