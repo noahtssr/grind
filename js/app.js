@@ -820,6 +820,19 @@ async function admActivity(){
   charts.push(new Chart(document.getElementById('ac2'),{data:{labels:lab,datasets:[{type:'line',label:t('Active students'),data:au,borderColor:'#7c5cff',backgroundColor:'rgba(124,92,255,.15)',fill:true,pointRadius:2,tension:.2,yAxisID:'y'},{type:'bar',label:t('XP earned'),data:xp,backgroundColor:'rgba(245,158,11,.35)',yAxisID:'y1'}]},options:{maintainAspectRatio:false,interaction:{mode:'index',intersect:false},scales:{x:{ticks:{maxTicksLimit:10}},y:{beginAtZero:true,ticks:{precision:0}},y1:{beginAtZero:true,position:'right',grid:{drawOnChartArea:false}}}}}));
   charts.push(new Chart(document.getElementById('ac3'),{type:'bar',data:{labels:subs,datasets:[{label:t('Correct'),data:subs.map(s=>A.mcq[s].ok),backgroundColor:'rgba(34,197,94,.7)'},{label:t('Wrong'),data:subs.map(s=>A.mcq[s].n-A.mcq[s].ok),backgroundColor:'rgba(239,68,68,.6)'}]},options:{indexAxis:'y',maintainAspectRatio:false,scales:{x:{stacked:true,beginAtZero:true},y:{stacked:true}},plugins:{tooltip:{callbacks:{afterBody:it=>{const s=subs[it[0].dataIndex],m=A.mcq[s];return t('Success rate')+': '+Math.round(100*m.ok/Math.max(1,m.n))+'% · '+m.users+' '+t('students');}}}}}}));
 }
+let admRk='xp';
+async function admRank(){
+  const L=document.getElementById('adml');if(!L)return;const {data,error}=await SB.rpc('grind_accounts');
+  if(error){L.innerHTML='<p class="mut">Couldn\'t load the leaderboard.</p>';console.error(error);return;}
+  const k=admRk,rows=(data||[]).filter(r=>r.confirmed).sort((a,b)=>(+b[k]||0)-(+a[k]||0)||(+b.xp||0)-(+a.xp||0));
+  let rank=0,prev=null;rows.forEach((r,i)=>{const v=+r[k]||0;if(v!==prev){rank=i+1;prev=v;}r._rk=rank;});
+  const md=n=>n===1?'🥇':n===2?'🥈':n===3?'🥉':n;const tot=rows.reduce((a,r)=>a+(+r[k]||0),0),act=rows.filter(r=>(+r[k]||0)>0).length;
+  L.innerHTML=`<div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:8px"><div class="libtabs"><button class="chipb ${k==='xp'?'on':''}" data-rk="xp">${t('All time')}</button><button class="chipb ${k==='xp7'?'on':''}" data-rk="xp7">${t('Last 7 days')}</button><button class="chipb ${k==='streak'?'on':''}" data-rk="streak">🔥 ${t('Streak')}</button></div><span class="sp" style="flex:1"></span><span class="small mut">${rows.length} ${t('students')} · ${act} ${t('with points')} · ${t('total')} ${Math.round(tot).toLocaleString()}${k==='streak'?'':' XP'}</span></div>
+  <div style="overflow-x:auto"><table class="admt"><thead><tr><th>#</th><th>${t('Student')}</th><th>XP</th><th>${t('XP 7 days')}</th><th>${t('Level')}</th><th>${t('Streak')}</th><th>${t('Sessions')}</th><th>${t('Last activity')}</th></tr></thead><tbody>${rows.map(r=>`<tr${(+r[k]||0)?'':' style="opacity:.55"'}><td style="font-weight:800">${md(r._rk)}</td><td><div class="adm-n" data-notr style="font-weight:600"></div><div class="small mut adm-e" data-notr></div>${r.suspended_until?`<span class="pill bad">⏸ ${t('suspended')}</span>`:''}</td><td><b>${Math.round(+r.xp||0)}</b></td><td>${Math.round(+r.xp7||0)}</td><td>${r.lvl||1}</td><td>${r.streak||0}</td><td>${r.sessions||0}</td><td class="small">${r.active_at?new Date(r.active_at).toLocaleString(UI_LANG()==='fr'?'fr-FR':'en-GB',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'}):'—'}</td></tr>`).join('')}</tbody></table></div>
+  <p class="small mut" style="margin-top:10px">${t('Full ranking of every confirmed account, including students who hide themselves from the public leaderboard. Only you can see this page.')}</p>`;
+  L.querySelectorAll('.adm-n').forEach((el,i)=>el.textContent=((rows[i].first||'')+' '+(rows[i].last||'')).trim()||'—');L.querySelectorAll('.adm-e').forEach((el,i)=>el.textContent=rows[i].email);
+  L.querySelectorAll('[data-rk]').forEach(b=>b.onclick=()=>{admRk=b.dataset.rk;admRank();});
+}
 async function admUsers(){
   const L=document.getElementById('adml');if(!L)return;const {data,error}=await SB.rpc('grind_accounts');
   if(error){L.innerHTML='<p class="mut">Couldn\'t load the accounts.</p>';console.error(error);return;}
@@ -849,7 +862,7 @@ async function admUsers(){
 }
 async function viewAdmin(){
   if(!ADMIN){go('home');return;}
-  app.innerHTML=`<div class="top"><h1>🛠 Admin</h1><span class="sp"></span><button class="btn sm" id="admbk" title="Students' progress, leaderboard, reports and account list (no passwords)">💾 Download a backup</button><button class="btn sm" id="admr">Refresh</button></div><div id="admk" class="g g4 mb"></div><div class="card"><div class="libtabs" style="margin-bottom:8px"><button class="chipb ${admTab==='users'?'on':''}" data-at="users">Accounts</button><button class="chipb ${admTab==='stats'?'on':''}" data-at="stats">📊 Activity</button><button class="chipb ${admTab==='open'?'on':''}" data-at="open">To fix</button><button class="chipb ${admTab==='done'?'on':''}" data-at="done">Fixed</button></div><div id="adml"><p class="mut">Loading…</p></div></div>`;
+  app.innerHTML=`<div class="top"><h1>🛠 Admin</h1><span class="sp"></span><button class="btn sm" id="admbk" title="Students' progress, leaderboard, reports and account list (no passwords)">💾 Download a backup</button><button class="btn sm" id="admr">Refresh</button></div><div id="admk" class="g g4 mb"></div><div class="card"><div class="libtabs" style="margin-bottom:8px"><button class="chipb ${admTab==='users'?'on':''}" data-at="users">Accounts</button><button class="chipb ${admTab==='rank'?'on':''}" data-at="rank">🏆 Leaderboard</button><button class="chipb ${admTab==='stats'?'on':''}" data-at="stats">📊 Activity</button><button class="chipb ${admTab==='open'?'on':''}" data-at="open">To fix</button><button class="chipb ${admTab==='done'?'on':''}" data-at="done">Fixed</button></div><div id="adml"><p class="mut">Loading…</p></div></div>`;
   document.getElementById('admr').onclick=()=>viewAdmin();
   document.getElementById('admbk').onclick=async e=>{const b=e.currentTarget;b.disabled=true;const old=b.textContent;b.textContent=t('Preparing…');
     try{const {data,error}=await SB.rpc('grind_backup');if(error||!data)throw error||new Error('empty');
@@ -861,6 +874,7 @@ async function viewAdmin(){
   app.querySelectorAll('[data-at]').forEach(b=>b.onclick=()=>{admTab=b.dataset.at;viewAdmin();});
   if(admTab==='users'){const st=await SB.rpc('grind_stats');admKpi(st.data||{});return admUsers();}
   if(admTab==='stats'){const st=await SB.rpc('grind_stats');admKpi(st.data||{});return admActivity();}
+  if(admTab==='rank'){const st=await SB.rpc('grind_stats');admKpi(st.data||{});return admRank();}
   const [st,rp]=await Promise.all([SB.rpc('grind_stats'),SB.from('reports').select('id,subj,kind,ref,item,comment,status,created_at').eq('status',admTab).order('created_at',{ascending:false}).limit(200)]);
   admKpi(st.data||{});
   const L=document.getElementById('adml'),rows=rp.data||[];
