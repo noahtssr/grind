@@ -10,7 +10,7 @@ const sb=window.SB=window.GRIND_TEST?window.GRIND_TEST.sb:supabase.createClient(
 const A=document.getElementById('auth');
 const esc=s=>String(s||'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 const LOGO='<svg width="56" height="56" viewBox="0 0 32 32" aria-hidden="true"><rect width="32" height="32" rx="9" fill="#7c5cff"/><path d="M21.6 10.2A8 8 0 1 0 24 16h-7" stroke="#fff" stroke-width="3.4" fill="none" stroke-linecap="round" stroke-linejoin="round"/><path d="M25.5 3.8l.9 2.4 2.4.9-2.4.9-.9 2.4-.9-2.4-2.4-.9 2.4-.9z" fill="#fff"/></svg>';
-let booted=false,mode='login',msg='',emailKeep='';
+let booted=false,mode='login',msg='',emailKeep='',pwKeep='',pollT=null;
 function errText(e){const m=(e&&e.message)||String(e||'');
   if(/invalid login credentials/i.test(m))return 'Wrong email or password.';
   if(/email not confirmed/i.test(m))return 'NOTCONFIRMED';
@@ -52,14 +52,17 @@ function draw(){
       if(!/^[^@\s]+@ieseg\.fr$/.test(e)){er.textContent=t('Grind is reserved for @ieseg.fr email addresses.');return;}
       if(p.length<8){er.textContent=t('Choose a stronger password (at least 8 characters).');return;}
       if(p!==p2){er.textContent=t('The two passwords don\'t match.');return;}
-      busy(b,true,t('Creating…'));const {data,error}=await sb.auth.signUp({email:e,password:p,options:{data:{first:f,last:l},emailRedirectTo:SITE}});busy(b,false);
+      pwKeep=p;busy(b,true,t('Creating…'));const {data,error}=await sb.auth.signUp({email:e,password:p,options:{data:{first:f,last:l},emailRedirectTo:SITE}});busy(b,false);
       if(error){msg=errText(error);draw();return;}
       if(data.session){boot(data.session);return;}
       if(data.user&&Array.isArray(data.user.identities)&&!data.user.identities.length){msg=errText('already registered');draw();return;}
       mode='checkmail';msg='';draw();};}
-  else if(mode==='checkmail'){shell(`<h1>Check your inbox 📬</h1><p>We sent a confirmation link to <b>${esc(emailKeep)}</b>. Open it to activate your account, then log in.</p><div class="tipnote small">📥 <b>Not in your inbox?</b> Look in <b>Junk Email / Spam</b>: the first email from Grind often lands there.<br>⏱ It can take up to 10 minutes to arrive.</div><div id="aerr" class="oerr"></div>
+  else if(mode==='checkmail'){shell(`<h1>Check your inbox 📬</h1><p>We sent a confirmation link to <b>${esc(emailKeep)}</b>. Open it to activate your account.</p><p class="small mut">⏳ This page logs you in automatically as soon as your account is activated: keep it open. If nothing happens, try logging in: your account may already be active.</p><div class="tipnote small">📥 <b>Not in your inbox?</b> Look in <b>Junk Email / Spam</b>: the first email from Grind often lands there.<br>⏱ It can take up to 10 minutes to arrive.</div><div id="aerr" class="oerr"></div>
     <div class="onbfoot" style="align-items:center"><a href="#" id="resend" class="small">Send the link again</a><button class="btn pri big" data-mode="login">Back to log in</button></div>${window.GRIND_DEMO?`<div class="demobox"><div class="small"><b>Aperçu :</b> in the real site, the student receives an email here. Click to simulate opening it.</div><button class="btn pri" id="demoopen">📧 Open the confirmation email</button></div>`:''}`);
     {const d=document.getElementById('demoopen');if(d)d.onclick=()=>{const s=window.GRIND_DEMO.confirm(emailKeep);if(s){history.replaceState(null,'',location.pathname);boot(s);setTimeout(()=>window.toast&&toast(t('✓ Email confirmed: welcome to Grind!')),1500);}};}
+    if(pwKeep&&!pollT){let n=0;const tick=async()=>{pollT=null;if(booted||mode!=='checkmail'||!pwKeep)return;n++;
+      try{const {data}=await sb.auth.signInWithPassword({email:emailKeep,password:pwKeep});if(data&&data.session){pwKeep='';window.__toastAfterBoot='✓ Email confirmed: welcome to Grind!';boot(data.session);return;}}catch(x){}
+      if(n<60)pollT=setTimeout(tick,n<15?4000:10000);};pollT=setTimeout(tick,3000);}
     document.getElementById('resend').onclick=async e=>{e.preventDefault();const {error}=await sb.auth.resend({type:'signup',email:emailKeep,options:{emailRedirectTo:SITE}});document.getElementById('aerr').textContent=error?t(errText(error)):t('Link sent: check your inbox (and spam).');};}
   else if(mode==='forgot'){shell(`<h1>Forgot your password?</h1><p class="mut" style="margin-top:-2px">Enter your school email: we'll send you a link to choose a new password.</p>
     ${field('fe','School email','email','username','firstname.lastname@ieseg.fr',emailKeep)}<div id="aerr" class="oerr">${esc(msg)}</div>
@@ -115,5 +118,5 @@ sb.auth.onAuthStateChange((ev,session)=>{if(ev==='PASSWORD_RECOVERY'){mode='reco
   const {data}=await sb.auth.getSession();
   if(recovering){if(mode!=='recovery'){mode='recovery';draw();}return;}
   if(data&&data.session){boot(data.session);return;}
-  mode='login';if(/deleted/.test(location.hash)){msg=t('Your account and all your data have been deleted.');history.replaceState(null,'',location.pathname);draw();return;}msg=linkError?decodeURIComponent(linkError.replace(/\+/g,' ')):'';if(/expired|invalid/i.test(msg))msg=t('This link has expired. Ask for a new one.');draw();})();
+  mode='login';if(/deleted/.test(location.hash)){msg=t('Your account and all your data have been deleted.');history.replaceState(null,'',location.pathname);draw();return;}msg=linkError?decodeURIComponent(linkError.replace(/\+/g,' ')):'';if(/expired|invalid/i.test(msg))msg=t('This link has already been used or has expired. Try logging in: your account is probably already active. Otherwise, ask for a new link.');draw();})();
 })();
