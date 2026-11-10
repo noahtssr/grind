@@ -21,9 +21,10 @@ const T=todayStr();
 const subjBlocks=s=>PLAN.flatMap(p=>p.blocs).filter(b=>b.s===s);
 function prog(s){const a=s?subjBlocks(s):PLAN.flatMap(p=>p.blocs);const d=a.filter(b=>done[b.key]).length;return {d,n:a.length,p:a.length?Math.round(d/a.length*100):0};}
 function getW(s){if(s==='TL'&&weights.TL&&weights.TL.join()==='10,10,30,50'){delete weights.TL;store('weights',weights);}return GRADING[s].map((c,i)=>weights[s]&&weights[s][i]!=null?+weights[s][i]:c.w);}
+const DEFAULT_GRADE=8;
 function required(s){
   const comps=GRADING[s], w=getW(s), g=grades[s]||{}; let acc=0, fw=0, assumed=false;
-  comps.forEach((c,i)=>{ if(c.fin){fw+=w[i];return;} const v=g[i]; if(v===''||v==null||isNaN(+v)){assumed=true;} else acc+=w[i]*Math.max(0,Math.min(20,+v)); });
+  comps.forEach((c,i)=>{ if(c.fin){fw+=w[i];return;} const v=g[i]; if(v===''||v==null||isNaN(+v)){assumed=true;acc+=w[i]*DEFAULT_GRADE;} else acc+=w[i]*Math.max(0,Math.min(20,+v)); });
   const tot=w.reduce((a,b)=>a+b,0)||100; if(!fw) return null;
   const r=(10*tot-acc)/fw; return {r,assumed,known:Object.values(g).some(v=>v!==''&&v!=null)};
 }
@@ -191,19 +192,19 @@ function viewProgress(){
 function gradeRows(s,editW){const comps=GRADING[s],w=getW(s),g=grades[s]||{};
   return comps.map((c,i)=>`<div class="grow"><div style="flex:1">${c.n}${c.uc?' <span class="pill warn" title="Weight not found in the course documents: check your syllabus">to confirm</span>':''}</div>
   ${editW?`<input type="number" min="0" max="100" step="1" value="${w[i]}" data-w="${s}|${i}" title="weight %"> %`:`<span class="small mut">${w[i]}%</span>`}
-  ${c.fin?'<span class="pill" style="width:96px;text-align:center">final</span>':`<input type="number" min="0" max="20" step="0.25" placeholder="/20" value="${g[i]??''}" data-g="${s}|${i}">`}</div>`).join('');}
+  ${c.fin?'<span class="pill" style="width:96px;text-align:center">final</span>':`<input type="number" min="0" max="20" step="0.25" placeholder="8 (default)" value="${g[i]??''}" data-g="${s}|${i}">`}</div>`).join('');}
 function bindGrades(root,after){root.querySelectorAll('[data-g]').forEach(inp=>inp.oninput=()=>{const [s,i]=inp.dataset.g.split('|');grades[s]=grades[s]||{};let v=inp.value===''?'':Math.max(0,Math.min(20,+inp.value));if(v!==''&&isNaN(v))v='';if(v!==''&&String(v)!==inp.value)inp.value=v;grades[s][i]=v;store('grades',grades);after&&after(s);});
  root.querySelectorAll('[data-w]').forEach(inp=>inp.oninput=()=>{const [s,i]=inp.dataset.w.split('|');weights[s]=weights[s]||GRADING[s].map(c=>c.w);weights[s][i]=+inp.value||0;store('weights',weights);after&&after(s);});}
 function viewGrades(){
   app.innerHTML=`<div class="top"><h1>Grades & targets</h1><span class="sp"></span></div>
-  <p class="mut mb">Enter the grades you already have. For each subject, the target shows the <b>minimum grade at the final exam</b> to finish with <b>10/20</b>. Weights come from your syllabi and course slides; those marked “to confirm” were not found — edit them if needed. Grades go from 0 to 20; <b>a grade not entered counts as 0</b>.</p>
+  <p class="mut mb">Enter the grades you already have. For each subject, the target shows the <b>minimum grade at the final exam</b> to finish with <b>10/20</b>. Weights come from your syllabi and course slides; those marked “to confirm” were not found — edit them if needed. Grades go from 0 to 20; <b>a grade not entered counts as 8/20 by default</b>.</p>
   <div class="g g2">${EXAMS.map(e=>`<div class="card" style="--sc:${COL[e.id]}"><div style="display:flex;justify-content:space-between;align-items:center;gap:10px"><h2 style="margin:0"><span class="chip">${e.id}</span> ${e.name}</h2><div style="text-align:right" id="rq-${e.id}">${reqBadge(e.id,true)}<div class="small mut">needed at the final</div></div></div><div style="margin-top:10px">${gradeRows(e.id,true)}</div><div class="small mut" id="sum-${e.id}"></div></div>`).join('')}</div>`;
   const upd=s=>{const el=document.getElementById('rq-'+s);if(el)el.innerHTML=reqBadge(s,true)+'<div class="small mut">needed at the final</div>';const w=getW(s).reduce((a,b)=>a+b,0);const sm=document.getElementById('sum-'+s);if(sm)sm.textContent=w!==100?`⚠️ Weights add up to ${w}% (should be 100%).`:'';};
   bindGrades(app,upd); EXAMS.forEach(e=>upd(e.id));
 }
 function gradesModal(){
   const m=document.getElementById('modal'); const list=EXAMS.filter(e=>GRADING[e.id].some(c=>!c.fin));
-  m.innerHTML=`<div class="modal"><div class="box"><h2>🎯 Your mid-term grades</h2><p class="mut">Enter the grades you already have (mid-terms, continuous assessment…). The site then computes, for each subject, the <b>exact minimum grade you need at the final</b> to get 10/20. Grades go from 0 to 20, and an empty field counts as 0 — you can change everything later in “Grades & targets”.</p>
+  m.innerHTML=`<div class="modal"><div class="box"><h2>🎯 Your mid-term grades</h2><p class="mut">Enter the grades you already have (mid-terms, continuous assessment…). The site then computes, for each subject, the <b>exact minimum grade you need at the final</b> to get 10/20. Grades go from 0 to 20, and an empty field counts as 8/20 by default — you can change everything later in “Grades & targets”.</p>
   ${list.map(e=>`<div style="margin-top:14px"><b><span class="dot" style="background:${COL[e.id]};margin-right:6px"></span>${e.name}</b> <span id="mq-${e.id}" style="float:right">${reqBadge(e.id)}</span>${gradeRows(e.id,false)}</div>`).join('')}
   <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:18px"><button class="btn" id="mskip">Later</button><button class="btn pri" id="msave">Save & see my targets</button></div></div></div>`;
   bindGrades(m,s=>{const el=document.getElementById('mq-'+s);if(el)el.innerHTML=reqBadge(s);});
@@ -242,7 +243,7 @@ function viewSubject(){
     const nextB=subjBlocks(subj).find(b=>!done[b.key]&&b.key.split('|')[0]>=T);
     h+=`<div class="g g2 mb" style="grid-template-columns:1.3fr 1fr"><div class="card"><h2>Exam format</h2><div class="note">${c.format||'—'}</div>
      ${nextB?`<h3>Next block</h3>${taskHTML(nextB,true)}`:''}</div>
-     <div class="card"><h2>Your target</h2>${q?`<div style="display:flex;align-items:center;gap:14px">${reqBadge(subj,true)}<span class="small mut">minimum at the final to get 10/20${q.assumed?' (empty grades count as 0)':''}</span></div>`:''}<div style="margin-top:8px">${gradeRows(subj,false)}</div><a href="#" id="tog">Edit weights →</a></div></div>
+     <div class="card"><h2>Your target</h2>${q?`<div style="display:flex;align-items:center;gap:14px">${reqBadge(subj,true)}<span class="small mut">minimum at the final to get 10/20${q.assumed?' (grades not entered count as 8/20 by default)':''}</span></div>`:''}<div style="margin-top:8px">${gradeRows(subj,false)}</div><a href="#" id="tog">Edit weights →</a></div></div>
     <div class="card"><h2>Chapters</h2>${chs.map((x,i)=>{const bl=subjBlocks(subj).filter(b=>b.chi===i);const d=bl.filter(b=>done[b.key]).length;const has=c.fiches&&c.fiches[i];return `<div class="grow"><span class="small mut" style="width:22px">${i+1}</span><div style="flex:1;cursor:pointer" data-chap="${i}"><b>${x.t}</b><div class="small mut">${has?'notes ✓ · ':''}${bl.length?`${d}/${bl.length} blocks done`:'no block planned'}</div></div><div style="width:110px;--sc:${COL[subj]}"><div class="bar"><i style="width:${bl.length?Math.round(d/bl.length*100):0}%"></i></div></div></div>`}).join('')}</div>`;
   }
   if(stab==='notes'){
