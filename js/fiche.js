@@ -172,7 +172,10 @@ function enhance(el){
   if(!secs){el.classList.add('fx-plain');return;}
   secs.forEach(s=>{s.titleTxt=s.title?strip(s.title):'';s.trapSec=/trap|mistake|pitfall|piège|erreur/i.test(s.titleTxt);});
   const titled=secs.filter(s=>s.title),nSec=titled.length;
-  const P=fr||titled.some(s=>s.flat)?{}:plan(subj);
+  const flat=titled.some(s=>s.flat);
+  // French notes mirror the English structure: reuse its quick checks and read ids
+  const enSecs=fr&&!flat?sectionsOf(((((G.EN||{})[subj]||{}).fiches)||{})[ch]||''):null;const mirror=!!(enSecs&&enSecs.length===nSec);
+  const P=flat||(fr&&!mirror)?{}:plan(subj);
   // key points
   const keys=[];titled.forEach(s=>{if(keys.length>=3||SKIPSEC.test(s.titleTxt)||s.trapSec)return;const k=keyFor(s,{trapSec:false});if(k)keys.push(k);});
   // ids (stable: title slug) + migration from the first version (position ids)
@@ -182,7 +185,7 @@ function enhance(el){
     const htmlParts=s.nodes.map(n=>n.nodeType===1&&(n.tagName==='UL'||n.tagName==='OL')?rebuildList(n,ctx):(n.nodeType===1?n.outerHTML:(n.textContent.trim()?`<p>${esc(n.textContent)}</p>`:''))).join('');
     const plain=norm(s.nodes.map(n=>n.textContent||'').join(' '));words+=plain.split(' ').length;
     if(!s.title)return htmlParts?`<div class="fxintro">${htmlParts}</div>`:'';
-    const si=ti++;const id=`${subj}|${ch}|${fr?'fr:':''}${slug(s.titleTxt)||si}`,old=`${subj}|${ch}|${i}`;
+    const si=ti++;const id=mirror?`${subj}|${ch}|${slug(enSecs[si].title)||si}`:`${subj}|${ch}|${fr?'fr:':''}${slug(s.titleTxt)||si}`,old=`${subj}|${ch}|${i}`;
     if(!fr&&!s.flat&&rm[old]&&!rm[id]){rm[id]=1;delete rm[old];mig=true;}
     const isRead=!!rm[id];
     const traps=s.trapSec?[]:trapsFor(subj,s.nodes);
