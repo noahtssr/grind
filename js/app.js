@@ -289,7 +289,7 @@ function quizBind(qs){
   const s=subj, box=document.getElementById('qz'); qm[s]=qm[s]||{};
   let order=qs.map((_,i)=>i).filter(i=>qOn(qs[i])).sort(()=>Math.random()-.5), i=0, score=0, answered=false, wrong=[];
   const st=qstats[s]||{best:null};
-  const start=mode=>{order=(mode==='wrong'?qs.map((_,k)=>k).filter(k=>qm[s][k]===0):qs.map((_,k)=>k)).sort(()=>Math.random()-.5);i=0;score=0;wrong=[];showQ();};
+  const start=mode=>{order=(mode==='wrong'?qs.map((_,k)=>k).filter(k=>qm[s][k]===0):qs.map((_,k)=>k)).filter(k=>qOn(qs[k])).sort(()=>Math.random()-.5);i=0;score=0;wrong=[];showQ();};
   const showQ=()=>{
     if(!order.length){box.innerHTML='<p>🎉 No missed question left.</p><button class="btn pri" id="ra">Redo all</button>';document.getElementById('ra').onclick=()=>start('all');return;}
     if(i>=order.length){const pct=Math.round(score/order.length*100);st.best=Math.max(st.best||0,pct);qstats[s]=st;store('qstats',qstats);if(pct===100&&order.length>=10){addXP(100,'· perfect quiz!');confetti(200);}else confetti(60);checkBadges();
